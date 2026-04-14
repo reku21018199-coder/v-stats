@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats クラウド版</title>
+    <title>V-Stats クラウド版 (JVA拡張版)</title>
     <style>
-        /* 元の index.php のスタイルを100%継承 */
+        /* 元のスタイルを100%継承 */
         body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; font-size: 13px; }
         .team-selector { display: flex; width: 100%; position: sticky; top: 0; z-index: 110; }
         .team-selector button { flex: 1; padding: 10px; font-size: 16px; border: none; color: white; font-weight: bold; cursor: pointer; opacity: 0.4; }
@@ -39,7 +39,6 @@
         .plus { color: #d4af37; font-weight: bold; } .minus { color: #f44336; font-weight: bold; }
         input[type="text"] { background: #222; border: 1px solid #444; color: white; border-radius: 3px; font-size: 13px; padding: 4px; }
         
-        /* 通信中オーバーレイ */
         #loading-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:200; justify-content:center; align-items:center; }
     </style>
 </head>
@@ -66,18 +65,16 @@
                     <th style="width:160px;">スパイク</th>
                     <th style="width:160px;">サーブ</th>
                     <th style="width:160px;">レシーブ</th>
-                    <th style="width:125px;">ディグ</th>
+                    <th style="width:160px;">ディグ</th>
                     <th style="width:90px;">ブロック</th>
                     <th style="width:80px;">他失点</th>
                 </tr>
             </thead>
-            <tbody id="table-body">
-                </tbody>
+            <tbody id="table-body"></tbody>
         </table>
     </div>
 
 <script>
-// --- ★取得したURLをここに貼り付けてください ---
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwFwZOdpAHnC0GQGGg_Z7QDumuWRBQIT4dF7lqjt4uUkNKw5TA2l6fyBZ3dakWHNlwQ/exec";
 
 let data = {
@@ -88,7 +85,6 @@ let data = {
     history: []
 };
 
-// チーム初期化ロジック
 function createEmptyTeam(prefix, count) {
     let players = [];
     for (let i = 0; i < count; i++) {
@@ -105,23 +101,33 @@ function createEmptyTeam(prefix, count) {
     return players;
 }
 
-// 画面描画（PHPのforeachの移植）
 function render() {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
     const current = data.current_team;
 
-    // タブの強調
     document.getElementById('tab-teamA').className = (current === 'teamA' ? 'active-A' : '');
     document.getElementById('tab-teamB').className = (current === 'teamB' ? 'active-B' : '');
     document.getElementById('matchNameInput').value = data.match_name;
 
     data[current].forEach((p, idx) => {
         const score = p.spike.double_ok + p.serve.double_ok + p.block.double_ok;
+        
+        // スパイク決定率
         const s_tot = Object.values(p.spike).reduce((a, b) => a + b, 0);
         const s_rate = s_tot > 0 ? ((p.spike.double_ok / s_tot) * 100).toFixed(1) : 0;
+        
+        // レシーブ返球率
         const rc_tot = Object.values(p.serve_cut).reduce((a, b) => a + b, 0);
         const rc_rate = rc_tot > 0 ? (((p.serve_cut.a * 100 + p.serve_cut.b * 50) / rc_tot)).toFixed(1) : 0;
+
+        // サーブ効果率 (JVA方式: (得点*100 + 効果*25 - 失点*25) / 打数)
+        const sv_tot = Object.values(p.serve).reduce((a, b) => a + b, 0);
+        const sv_eff = sv_tot > 0 ? ((p.serve.double_ok * 100 + p.serve.ok * 25 - p.serve.miss * 25) / sv_tot).toFixed(1) : 0;
+
+        // ディグ成功率 (成功 / 総数)
+        const dg_tot = Object.values(p.dig).reduce((a, b) => a + b, 0);
+        const dg_rate = dg_tot > 0 ? ((p.dig.ok / dg_tot) * 100).toFixed(1) : 0;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -150,11 +156,12 @@ function render() {
                     <button onclick="doAction('serve|miss|${idx}')" class="miss">×</button>
                 </div>
                 <div class="count-row">${Object.values(p.serve).join('/')}</div>
+                <div class="highlight-badge ${sv_eff >= 10 ? 'rate-good' : 'rate-normal'}">効果率:${sv_eff}</div>
             </td>
             <td>
                 <div class="btn-group">
                     <button onclick="doAction('serve_cut|a|${idx}')" class="ex">A</button>
-                    <button onclick="action('serve_cut|b|${idx}')" class="ok">B</button>
+                    <button onclick="doAction('serve_cut|b|${idx}')" class="ok">B</button>
                     <button onclick="doAction('serve_cut|keep|${idx}')" class="blue">C</button>
                     <button onclick="doAction('serve_cut|miss|${idx}')" class="miss">×</button>
                 </div>
@@ -168,6 +175,7 @@ function render() {
                     <button onclick="doAction('dig|miss|${idx}')" class="miss">×</button>
                 </div>
                 <div class="count-row">${Object.values(p.dig).join('/')}</div>
+                <div class="highlight-badge ${dg_rate >= 60 ? 'rate-good' : 'rate-normal'}">成功率:${dg_rate}%</div>
             </td>
             <td>
                 <div class="btn-group">
@@ -182,13 +190,12 @@ function render() {
     });
 }
 
-// サーバー通信
 async function save() {
     document.getElementById('loading-overlay').style.display = 'flex';
     try {
         await fetch(GAS_URL, {
             method: 'POST',
-            mode: 'no-cors', // GASの制限回避
+            mode: 'no-cors',
             body: JSON.stringify(data)
         });
     } catch (e) { console.error(e); }
@@ -207,7 +214,6 @@ async function load() {
     document.getElementById('loading-overlay').style.display = 'none';
 }
 
-// 各種操作
 function doAction(val) {
     const parts = val.split('|');
     const team = data.current_team;
@@ -253,7 +259,7 @@ function resetAll() {
 function confirmReset() { if(confirm('全てリセットしますか？')) { resetAll(); render(); save(); } }
 
 function downloadCSV() {
-    let csv = "\uFEFFチーム,背番号,名前,総得点,総失点,スパイク決定率,レシーブ返球率\n";
+    let csv = "\uFEFFチーム,背番号,名前,総得点,総失点,スパ決定率,サーブ効果率,レシーブ返球率,ディグ成功率\n";
     ['teamA', 'teamB'].forEach(t => {
         data[t].forEach(p => {
             const score = p.spike.double_ok + p.serve.double_ok + p.block.double_ok;
@@ -261,7 +267,12 @@ function downloadCSV() {
             const s_rate = s_tot > 0 ? ((p.spike.double_ok/s_tot)*100).toFixed(1) : 0;
             const rc_tot = Object.values(p.serve_cut).reduce((a,b)=>a+b, 0);
             const rc_rate = rc_tot > 0 ? (((p.serve_cut.a*100+p.serve_cut.b*50)/rc_tot)).toFixed(1) : 0;
-            csv += `${t},${p.no},${p.name},${score},${p.loss},${s_rate}%,${rc_rate}%\n`;
+            const sv_tot = Object.values(p.serve).reduce((a,b)=>a+b, 0);
+            const sv_eff = sv_tot > 0 ? ((p.serve.double_ok*100 + p.serve.ok*25 - p.serve.miss*25)/sv_tot).toFixed(1) : 0;
+            const dg_tot = Object.values(p.dig).reduce((a,b)=>a+b, 0);
+            const dg_rate = dg_tot > 0 ? ((p.dig.ok/dg_tot)*100).toFixed(1) : 0;
+            
+            csv += `${t},${p.no},${p.name},${score},${p.loss},${s_rate}%,${sv_eff},${rc_rate}%,${dg_rate}%\n`;
         });
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -271,7 +282,6 @@ function downloadCSV() {
     link.click();
 }
 
-// 起動
 window.onload = load;
 </script>
 </body>
