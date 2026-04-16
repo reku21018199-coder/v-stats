@@ -2,99 +2,245 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V-Stats Pro v3.1 | High-Visibility Mode</title>
+    <title>V-Stats Pro v5.0 | Full Integrated</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
             --gold: #d4af37; --green: #4caf50; --orange: #ff9800; --red: #f44336; --blue: #2196f3;
         }
-        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 5px; overflow: hidden; }
+        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; font-size: 11px; }
         
-        header { display: flex; gap: 8px; align-items: center; padding: 5px 10px; background: #222; border-bottom: 1px solid #444; height: 40px; }
-        .match-input { flex: 1; background: #333; border: 1px solid #555; color: #fff; padding: 5px; border-radius: 4px; }
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; font-size: 11px; }
+        /* メインレイアウト */
+        .container { display: flex; height: calc(100vh - 80px); padding: 5px; gap: 5px; }
+        .court-area { flex: 7; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 5px; background: var(--court-green); padding: 8px; border-radius: 4px; border: 2px solid #fff; }
+        .sidebar { flex: 2; background: #222; padding: 8px; border-radius: 4px; overflow-y: auto; }
+
+        /* 選手カード */
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 3px; display: flex; flex-direction: column; border: 2px solid transparent; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; margin-bottom: 2px; }
+        .player-header input { background: transparent; border: none; color: #fff; font-size: 10px; width: 45%; font-weight: bold; }
         
-        .container { display: flex; gap: 8px; height: calc(100vh - 60px); }
-        .court-area { flex: 6; display: flex; flex-direction: column; } /* 出場メンバーを広く */
-        .sidebar { flex: 1; background: #222; padding: 8px; border-radius: 8px; overflow-y: auto; } /* 控えを細く */
+        /* 3行構成セクション */
+        .item-group { margin-bottom: 2px; }
+        .item-label { font-size: 8px; color: #aaa; text-align: center; display: block; line-height: 1; }
+        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
+        .action-btn { border: none; border-radius: 1px; color: #fff; font-size: 9px; padding: 2px 0; cursor: pointer; font-weight: bold; }
+        .eff-val { font-size: 8.5px; text-align: center; display: block; line-height: 1.2; }
+        .high-eff { color: #00ff00; font-weight: bold; }
 
-        .court-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 10px; background: var(--court-green); padding: 10px; border-radius: 8px; flex-grow: 1; border: 2px solid #fff;
-        }
+        /* 控え選手リスト */
+        .bench-item { background: #333; padding: 6px; margin-bottom: 4px; border-radius: 3px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .selected-player { border-color: var(--blue) !important; background: #0d47a1 !important; box-shadow: 0 0 8px var(--blue); }
 
-        /* 選手カード (3行構成を維持するための設計) */
-        .player-card { background: var(--card-bg); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; }
-        .active-swap { border-color: var(--blue); background: #0d47a1; }
-        .player-header { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; border-bottom: 1px solid #444; }
-        .player-header input { background: transparent; border: none; color: #fff; font-weight: bold; font-size: 14px; }
+        /* 下部コントロールエリア */
+        footer { position: fixed; bottom: 0; width: 100%; height: 80px; background: #1a1a1a; border-top: 2px solid #444; display: flex; align-items: center; padding: 0 15px; gap: 15px; box-sizing: border-box; }
+        .score-board { display: flex; align-items: center; gap: 8px; background: #000; padding: 5px 12px; border-radius: 6px; border: 1px solid #555; }
+        .score-num { font-size: 28px; font-weight: bold; color: var(--gold); min-width: 35px; text-align: center; font-family: monospace; }
+        .score-btn { width: 32px; height: 32px; background: #444; border: none; color: #fff; font-size: 20px; cursor: pointer; border-radius: 4px; }
+        .score-btn:active { background: #666; }
 
-        /* 項目ごとの3行セクション */
-        .stat-section { margin-bottom: 8px; text-align: center; }
-        .label { font-size: 10px; color: #aaa; font-weight: bold; display: block; }
-        .eff-display { font-size: 12px; font-weight: bold; display: block; margin-top: 2px; }
-        .high-eff { color: #00ff00; text-shadow: 0 0 5px rgba(0,255,0,0.5); } /* 高水準の強調 */
+        /* 初期設定モーダル */
+        #startup-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .medama-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; padding: 20px; background: var(--court-green); border-radius: 10px; }
+        .medama-slot { width: 90px; height: 60px; background: rgba(0,0,0,0.5); border: 2px dashed #fff; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #aaa; cursor: pointer; }
+        .medama-slot.filled { border-style: solid; background: var(--card-bg); color: #fff; }
 
-        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 2px; }
-        .action-btn { border: none; border-radius: 3px; color: #fff; font-size: 12px; font-weight: bold; padding: 8px 0; cursor: pointer; }
-        
-        /* ボタン色復活 */
-        .ex { background: var(--gold) !important; } 
-        .ok { background: var(--green) !important; } 
-        .bad { background: var(--orange) !important; } 
-        .miss { background: var(--red) !important; }
-        .blue { background: var(--blue) !important; }
-
-        /* 控え選手用（シンプル表示） */
-        .bench-item { background: #333; padding: 8px; margin-bottom: 4px; border-radius: 4px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        
-        #feedback-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 20px; }
-        .report { background: #222; padding: 20px; border-radius: 10px; max-width: 900px; margin: 0 auto; overflow-y: auto; height: 90%; }
+        #feedback-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; padding: 30px; overflow-y: auto; }
+        .report-card { background: #222; padding: 25px; border-radius: 12px; max-width: 900px; margin: 0 auto; border: 1px solid #444; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+        .mvp-tag { color: var(--gold); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>
-    <input type="text" id="matchName" class="match-input" placeholder="試合名">
-    <div style="background:#333; padding:5px 10px; border-radius:4px;">
-        <span>ローテ: <b id="rot-num">1</b></span>
-        <button class="btn blue" style="margin-left:5px;" onclick="rotate()">回転</button>
+<div id="startup-modal">
+    <h1 style="color:var(--gold)">STARTING LINEUP (目玉)</h1>
+    <p>右のリストから選手を選んで、コートのポジション(P1〜P6)を埋めてください</p>
+    <div style="display:flex; gap:30px; align-items:flex-start;">
+        <div class="medama-grid">
+            <div class="medama-slot" id="slot-4" onclick="assignSlot(4)">P4<br><small id="name-4"></small></div>
+            <div class="medama-slot" id="slot-3" onclick="assignSlot(3)">P3<br><small id="name-3"></small></div>
+            <div class="medama-slot" id="slot-2" onclick="assignSlot(2)">P2<br><small id="name-2"></small></div>
+            <div class="medama-slot" id="slot-5" onclick="assignSlot(5)">P5<br><small id="name-5"></small></div>
+            <div class="medama-slot" id="slot-6" onclick="assignSlot(6)">P6<br><small id="name-6"></small></div>
+            <div class="medama-slot" id="slot-1" onclick="assignSlot(1)">P1<br><small id="name-1"></small></div>
+        </div>
+        <div style="height:300px; overflow-y:auto; background:#222; padding:10px; border-radius:8px;" id="startup-list"></div>
     </div>
-    <button class="btn" style="background:#555;" onclick="undo()">戻る</button>
-    <button class="btn ex" onclick="showFeedback()">分析終了</button>
-</header>
-
-<div class="container">
-    <div class="court-area">
-        <div class="court-grid" id="court"></div>
-    </div>
-    <div class="sidebar" id="bench">
-        <div style="font-weight:bold; margin-bottom:10px; color:#aaa;">控え選手</div>
-    </div>
+    <button id="start-btn" class="score-btn" style="width:200px; margin-top:20px; font-size:16px; background:var(--blue); display:none;" onclick="initGame()">試合開始</button>
 </div>
 
+<div class="container">
+    <div class="court-area" id="court"></div>
+    <div class="sidebar" id="bench"></div>
+</div>
+
+<footer>
+    <input type="text" id="matchName" style="width:120px; background:#333; color:#fff; border:1px solid #555; padding:8px; border-radius:4px;" placeholder="試合名">
+    
+    <div class="score-board">
+        <div style="text-align:center"><span style="font-size:9px; color:#aaa;">自チーム</span><br>
+            <button class="score-btn" onclick="modifyScore('us', 1)">+</button>
+            <span class="score-num" id="score-us">00</span>
+            <button class="score-btn" style="width:20px; font-size:12px;" onclick="modifyScore('us', -1)">-</button>
+        </div>
+        <div style="font-size:20px; font-weight:bold; margin:0 5px;">-</div>
+        <div style="text-align:center"><span style="font-size:9px; color:#aaa;">相手</span><br>
+            <button class="score-btn" onclick="modifyScore('them', 1)">+</button>
+            <span class="score-num" id="score-them">00</span>
+            <button class="score-btn" style="width:20px; font-size:12px;" onclick="modifyScore('them', -1)">-</button>
+        </div>
+        <div style="margin-left:15px; border-left:1px solid #444; padding-left:15px;">
+            <span style="font-size:9px; color:#aaa;">ROTATION</span><br>
+            <span style="font-size:22px; font-weight:bold; color:var(--blue);">S<span id="current-rot">1</span></span>
+        </div>
+    </div>
+
+    <button class="score-btn" style="width:60px; font-size:12px; background:#444;" onclick="undo()">戻る</button>
+    <button class="score-btn" style="width:120px; font-size:14px; background:var(--gold);" onclick="finishGame()">試合終了分析</button>
+</footer>
+
 <div id="feedback-modal">
-    <div class="report" id="report-content"></div>
-    <button class="btn" style="background:#444; width:100%; margin-top:10px;" onclick="document.getElementById('feedback-modal').style.display='none'">閉じる</button>
+    <div class="report-card" id="report-body"></div>
+    <button class="score-btn" style="width:100%; margin-top:15px; background:#555;" onclick="document.getElementById('feedback-modal').style.display='none'">記録に戻る</button>
 </div>
 
 <script>
-    const GAS_URL = "YOUR_GAS_URL";
-    
     let players = Array.from({length: 15}, (_, i) => ({
         id: i, no: i+1, name: `選手${i+1}`,
-        spike: {ex:0, ok:0, bad:0, miss:0}, serve: {ex:0, ok:0, bad:0, miss:0},
-        rec: {a:0, b:0, c:0, miss:0}, dig: {ex:0, ok:0, bad:0, miss:0},
-        block: {ex:0, ok:0, bad:0, miss:0}, loss: 0
+        spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0},
+        rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0},
+        block:{ex:0,ok:0,bad:0,miss:0}, loss:0
     }));
 
-    let courtIds = [0, 1, 2, 3, 4, 5]; 
-    let benchIds = [6, 7, 8, 9, 10, 11, 12, 13, 14];
-    let rotPos = 1;
+    let courtIds = [null, null, null, null, null, null]; // P1-P6の順
+    let score = {us: 0, them: 0};
+    let currentRot = 1;
+    let serveRights = 'us'; 
+    let rotStats = Array.from({length: 7}, () => ({plus:0, minus:0}));
     let history = [];
     let swapTarget = null;
+    let startupSelection = null;
 
+    // --- 初期設定 (目玉) ロジック ---
+    function initStartup() {
+        const list = document.getElementById('startup-list');
+        list.innerHTML = '';
+        players.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'bench-item';
+            div.id = `start-p-${p.id}`;
+            div.innerHTML = `#${p.no} ${p.name}`;
+            div.onclick = () => {
+                if(startupSelection !== null) document.getElementById(`start-p-${startupSelection}`).classList.remove('selected-player');
+                startupSelection = p.id;
+                div.classList.add('selected-player');
+            };
+            list.appendChild(div);
+        });
+    }
+
+    function assignSlot(pos) {
+        if(startupSelection === null) return;
+        courtIds[pos-1] = startupSelection;
+        document.getElementById(`slot-${pos}`).classList.add('filled');
+        document.getElementById(`name-${pos}`).innerText = `#${players[startupSelection].no} ${players[startupSelection].name}`;
+        if(courtIds.every(id => id !== null)) document.getElementById('start-btn').style.display = 'block';
+    }
+
+    function initGame() {
+        document.getElementById('startup-modal').style.display = 'none';
+        render();
+    }
+
+    // --- メイン描画 ---
+    function render() {
+        const court = document.getElementById('court');
+        court.innerHTML = '';
+        // バレーのポジション順 (P4, P3, P2, P5, P6, P1) で表示
+        [3, 2, 1, 4, 5, 0].forEach(idx => {
+            const id = courtIds[idx];
+            const p = players[id];
+            const card = document.createElement('div');
+            card.className = `player-card ${swapTarget === id ? 'selected-player' : ''}`;
+            card.innerHTML = `
+                <div class="player-header">
+                    <span onclick="selectSwap(${id})">🔄</span>
+                    <input type="text" value="#${p.no}" onchange="players[${id}].no=this.value">
+                    <input type="text" value="${p.name}" onchange="players[${id}].name=this.value">
+                </div>
+                ${createRow(id, 'SPIKE', 'spike', ['◎','○','△','×'])}
+                ${createRow(id, 'SERVE', 'serve', ['◎','○','△','×'])}
+                ${createRow(id, 'REC', 'rec', ['A','B','C','×'])}
+                ${createRow(id, 'DIG', 'dig', ['◎','○','△','×'])}
+                ${createRow(id, 'BLOCK', 'block', ['◎','○','△','×'])}
+            `;
+            court.appendChild(card);
+        });
+
+        const bench = document.getElementById('bench');
+        bench.innerHTML = '<div style="font-size:10px; color:#888; margin-bottom:5px;">控え/リベロ</div>';
+        players.forEach(p => {
+            if(courtIds.includes(p.id)) return;
+            const item = document.createElement('div');
+            item.className = `bench-item ${swapTarget === p.id ? 'selected-player' : ''}`;
+            item.onclick = () => selectSwap(p.id);
+            item.innerHTML = `#${p.no} ${p.name}`;
+            bench.appendChild(item);
+        });
+        document.getElementById('current-rot').innerText = currentRot;
+    }
+
+    function createRow(pid, label, cat, btns) {
+        const p = players[pid];
+        let eff = (cat==='rec') ? getRecRate(p[cat]) : getEff(p[cat]);
+        const cols = ['var(--gold)','var(--green)','var(--orange)','var(--red)'];
+        return `
+            <div class="item-group">
+                <span class="item-label">${label}</span>
+                <div class="btn-row">
+                    <button class="action-btn" style="background:${cols[0]}" onclick="record(${pid},'${cat}','ex')">${btns[0]}</button>
+                    <button class="action-btn" style="background:${cols[1]}" onclick="record(${pid},'${cat}','ok')">${btns[1]}</button>
+                    <button class="action-btn" style="background:${cols[2]}" onclick="record(${pid},'${cat}','bad')">${btns[2]}</button>
+                    <button class="action-btn" style="background:${cols[3]}" onclick="record(${pid},'${cat}','miss')">${btns[3]}</button>
+                </div>
+                <span class="eff-val ${eff > 40 ? 'high-eff' : ''}">${eff}%</span>
+            </div>
+        `;
+    }
+
+    // --- 得点・自動ローテ ---
+    function modifyScore(side, val) {
+        if(score[side] + val < 0) return;
+        
+        // サイドアウト（相手サーブから自チーム得点）時にローテ回転
+        if(side === 'us' && val > 0 && serveRights === 'them') {
+            rotate();
+            serveRights = 'us';
+        } else if (side === 'them' && val > 0) {
+            serveRights = 'them';
+        }
+
+        score[side] += val;
+        if(val > 0) {
+            if(side === 'us') rotStats[currentRot].plus++;
+            else rotStats[currentRot].minus++;
+        }
+        
+        document.getElementById('score-us').innerText = score.us.toString().padStart(2, '0');
+        document.getElementById('score-them').innerText = score.them.toString().padStart(2, '0');
+        render();
+    }
+
+    function rotate() {
+        // [P1, P2, P3, P4, P5, P6] -> [P2, P3, P4, P5, P6, P1] 時計回り
+        const p = courtIds;
+        courtIds = [p[1], p[2], p[3], p[4], p[5], p[0]];
+        currentRot = currentRot === 6 ? 1 : currentRot + 1;
+    }
+
+    // --- スタッツ計算 ---
     const getEff = (s) => {
         const t = s.ex + s.ok + s.bad + s.miss;
         return t > 0 ? ((s.ex - s.miss) / t * 100).toFixed(1) : "0.0";
@@ -104,114 +250,53 @@
         return t > 0 ? ((r.a * 100 + r.b * 50) / t).toFixed(1) : "0.0";
     };
 
-    function render() {
-        // 出場メンバー描画
-        const court = document.getElementById('court');
-        court.innerHTML = '';
-        courtIds.forEach(id => {
-            const p = players[id];
-            const spEff = getEff(p.spike);
-            const svEff = getEff(p.serve);
-            const rcEff = getRecRate(p.rec);
-
-            const card = document.createElement('div');
-            card.className = `player-card ${swapTarget === id ? 'active-swap' : ''}`;
-            card.innerHTML = `
-                <div class="player-header">
-                    <span style="cursor:pointer" onclick="selectSwap(${id})">🔄</span>
-                    <input type="text" value="${p.no}" onchange="updateP(${id},'no',this.value)" style="width:25px">
-                    <input type="text" value="${p.name}" onchange="updateP(${id},'name',this.value)">
-                </div>
-                
-                <div class="stat-section">
-                    <span class="label">SPIKE</span>
-                    <div class="btn-row">
-                        <button class="action-btn ex" onclick="record(${id},'spike','ex')">◎</button>
-                        <button class="action-btn ok" onclick="record(${id},'spike','ok')">○</button>
-                        <button class="action-btn bad" onclick="record(${id},'spike','bad')">△</button>
-                        <button class="action-btn miss" onclick="record(${id},'spike','miss')">×</button>
-                    </div>
-                    <span class="eff-display ${spEff >= 40 ? 'high-eff' : ''}">${spEff}%</span>
-                </div>
-
-                <div class="stat-section">
-                    <span class="label">SERVE</span>
-                    <div class="btn-row">
-                        <button class="action-btn ex" onclick="record(${id},'serve','ex')">◎</button>
-                        <button class="action-btn ok" onclick="record(${id},'serve','ok')">○</button>
-                        <button class="action-btn bad" onclick="record(${id},'serve','bad')">△</button>
-                        <button class="action-btn miss" onclick="record(${id},'serve','miss')">×</button>
-                    </div>
-                    <span class="eff-display ${svEff >= 15 ? 'high-eff' : ''}">${svEff}%</span>
-                </div>
-
-                <div class="stat-section">
-                    <span class="label">RECEPTION</span>
-                    <div class="btn-row">
-                        <button class="action-btn ex" onclick="record(${id},'rec','a')">A</button>
-                        <button class="action-btn ok" onclick="record(${id},'rec','b')">B</button>
-                        <button class="action-btn blue" onclick="record(${id},'rec','c')">C</button>
-                        <button class="action-btn miss" onclick="record(${id},'rec','miss')">×</button>
-                    </div>
-                    <span class="eff-display ${rcEff >= 60 ? 'high-eff' : ''}">${rcEff}%</span>
-                </div>
-            `;
-            court.appendChild(card);
-        });
-
-        // 控えメンバー描画 (名前と背番号のみ)
-        const bench = document.getElementById('bench');
-        bench.innerHTML = '<div style="font-weight:bold; margin-bottom:10px; color:#aaa;">控え選手</div>';
-        benchIds.forEach(id => {
-            const p = players[id];
-            const item = document.createElement('div');
-            item.className = `bench-item ${swapTarget === id ? 'active-swap' : ''}`;
-            item.onclick = () => selectSwap(id);
-            item.innerHTML = `<span>#${p.no}</span> <b>${p.name}</b>`;
-            bench.appendChild(item);
-        });
-        document.getElementById('rot-num').innerText = rotPos;
-    }
-
     function record(pid, cat, type) {
-        players[pid][cat][type]++;
-        if (type === 'miss' && cat !== 'dig') players[pid].loss++;
+        players[pid][cat][type === 'ex' ? 'ex' : type === 'ok' ? 'ok' : type === 'bad' ? 'bad' : 'miss']++;
+        if(type === 'miss' && cat !== 'dig') players[pid].loss++;
         history.push({pid, cat, type});
         render();
-        saveGas();
     }
 
     function selectSwap(id) {
         if (swapTarget === null) { swapTarget = id; render(); }
         else {
-            let aIn = courtIds.indexOf(swapTarget); 
-            let bIn = courtIds.indexOf(id);
-            if (aIn !== -1 && bIn !== -1) { [courtIds[aIn], courtIds[bIn]] = [courtIds[bIn], courtIds[aIn]]; }
-            else if (aIn !== -1) { courtIds[aIn] = id; benchIds[benchIds.indexOf(id)] = swapTarget; }
-            else if (bIn !== -1) { courtIds[bIn] = swapTarget; benchIds[benchIds.indexOf(swapTarget)] = id; }
+            const idxA = courtIds.indexOf(swapTarget);
+            const idxB = courtIds.indexOf(id);
+            if(idxA !== -1) courtIds[idxA] = id;
+            if(idxB !== -1) courtIds[idxB] = swapTarget;
             swapTarget = null; render();
         }
     }
 
-    function rotate() {
-        const p = courtIds;
-        courtIds = [p[1], p[2], p[5], p[0], p[3], p[4]];
-        rotPos = rotPos === 6 ? 1 : rotPos + 1;
-        render();
-    }
-
-    function updateP(id, key, val) { players[id][key] = val; }
-    function undo() { if(history.length>0){ const l=history.pop(); players[l.pid][l.cat][l.type]--; render(); }}
-    async function saveGas() { /* Fetch implementation */ }
-
-    function showFeedback() {
+    function finishGame() {
         const modal = document.getElementById('feedback-modal');
+        const body = document.getElementById('report-body');
         modal.style.display = 'block';
-        // (以前のフィードバックロジックをここに集計して表示)
-        document.getElementById('report-content').innerHTML = "<h2>分析レポート生成中...</h2>";
+
+        const bestSpiker = [...players].sort((a,b) => getEff(b.spike) - getEff(a.spike))[0];
+        const bestRot = rotStats.map((s,i)=>({i, diff:s.plus-s.minus})).slice(1).sort((a,b)=>b.diff-a.diff)[0];
+
+        let html = `<h2 style="color:var(--gold)">試合分析レポート</h2>`;
+        html += `<p>🔥 <b>スパイクMVP:</b> ${bestSpiker.name} (${getEff(bestSpiker.spike)}%)</p>`;
+        html += `<p>📈 <b>最強ローテ:</b> S${bestRot.i} (得失点差: +${bestRot.diff})</p>`;
+        html += `<table><tr><th>選手</th><th>得点</th><th>失点</th><th>SP率</th><th>SV率</th><th>受球率</th></tr>`;
+        players.forEach(p => {
+            const score = p.spike.ex + p.serve.ex + p.block.ex;
+            html += `<tr><td>#${p.no} ${p.name}</td><td>${score}</td><td>${p.loss}</td><td>${getEff(p.spike)}%</td><td>${getEff(p.serve)}%</td><td>${getRecRate(p.rec)}%</td></tr>`;
+        });
+        html += `</table>`;
+        body.innerHTML = html;
     }
 
-    render();
+    function undo() {
+        if(history.length > 0) {
+            const last = history.pop();
+            players[last.pid][last.cat][last.type === 'ex' ? 'ex' : last.type === 'ok' ? 'ok' : last.type === 'bad' ? 'bad' : 'miss']--;
+            render();
+        }
+    }
+
+    window.onload = initStartup;
 </script>
 </body>
 </html>
