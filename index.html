@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v7.0</title>
+    <title>V-Stats Pro v7.1</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -12,104 +12,101 @@
         }
         body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; font-size: 11px; touch-action: manipulation; }
         
-        /* レイアウト：スマホ/タブレット可変 */
-        .container { display: flex; height: calc(100vh - 90px); padding: 2px; gap: 3px; }
-        .court-area { flex: 7; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 3px; background: var(--court-green); padding: 5px; border-radius: 4px; border: 2px solid #fff; }
-        .sidebar { flex: 2; background: #222; padding: 5px; border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; }
+        /* メインコンテナ */
+        .container { display: flex; height: calc(100vh - 95px); padding: 2px; gap: 4px; }
+        
+        /* コートエリア：横スクロール対応 */
+        .court-wrapper { flex: 7; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; background: #000; border-radius: 4px; }
+        .court-area { 
+            display: grid; 
+            grid-template-columns: repeat(3, 300px); /* 1枚の横幅を固定 */
+            grid-template-rows: repeat(2, 1fr); 
+            gap: 5px; 
+            background: var(--court-green); 
+            padding: 8px; 
+            width: 900px; /* 前衛3人+後衛3人の幅を確保 */
+            height: 100%;
+            box-sizing: border-box;
+            border: 3px solid #fff;
+        }
+
+        .sidebar { flex: 2.5; background: #222; padding: 5px; border-radius: 4px; display: flex; flex-direction: column; min-width: 120px; }
         .bench-list { flex: 1; overflow-y: auto; }
         
-        /* リアルタイムフィードバックエリア */
-        #live-feedback { height: 120px; background: #000; border: 1px solid #444; border-radius: 4px; padding: 5px; font-size: 9px; color: var(--neon-blue); overflow-y: auto; margin-top: 5px; white-space: pre-wrap; line-height: 1.4; border-left: 3px solid var(--blue); }
+        /* フィードバックエリア：直近履歴＋分析 */
+        #live-feedback { height: 140px; background: #000; border: 1px solid #444; border-radius: 4px; padding: 5px; font-size: 10px; color: var(--neon-blue); overflow-y: auto; margin-top: 5px; border-left: 3px solid var(--blue); }
+        .history-log { color: #888; border-bottom: 1px solid #333; margin-bottom: 3px; font-size: 9px; }
 
-        .player-card { background: var(--card-bg); border-radius: 4px; padding: 2px; display: flex; flex-direction: column; border: 2px solid transparent; height: 100%; box-sizing: border-box; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 18px; margin-bottom: 1px; }
-        .player-header input { background: transparent; border: none; color: #fff; font-size: 10px; width: 48%; font-weight: bold; }
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 3px; display: flex; flex-direction: column; border: 2px solid transparent; scroll-snap-align: start; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 22px; }
+        .player-header input { background: transparent; border: none; color: #fff; font-size: 11px; width: 45%; font-weight: bold; }
         
         .item-group { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; }
-        .item-label { font-size: 8px; color: var(--gold); font-weight: bold; text-align: left; padding-left: 2px; line-height: 1; margin-top: 1px; }
+        .item-label { font-size: 9px; color: var(--gold); font-weight: bold; }
         
-        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; padding: 1px 0; }
-        .action-btn { border: none; border-radius: 1px; color: #fff; font-size: 11px; padding: 4px 0; cursor: pointer; font-weight: bold; }
+        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px 0; }
+        .action-btn { border: none; border-radius: 2px; color: #fff; font-size: 12px; padding: 6px 0; cursor: pointer; font-weight: bold; }
         
-        /* カウント数字：青く光る太文字 */
-        .stat-line { display: flex; justify-content: space-around; font-size: 10px; line-height: 1; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 5px var(--blue); }
-        .eff-val { font-size: 9px; text-align: center; font-weight: bold; line-height: 1.1; margin-bottom: 1px; color: #fff; }
-        .high-eff { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
+        .stat-line { display: flex; justify-content: space-around; font-size: 11px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 5px var(--blue); margin: 2px 0; }
+        .eff-val { font-size: 10px; text-align: center; font-weight: bold; color: #fff; }
 
-        .bench-item { background: #333; padding: 6px; margin-bottom: 3px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; font-size: 11px; }
-        .selected-player { border-color: var(--blue) !important; background: #0d47a1 !important; box-shadow: 0 0 8px var(--blue); }
+        .bench-item { background: #333; padding: 8px; margin-bottom: 4px; border-radius: 3px; cursor: pointer; border: 2px solid transparent; }
+        .selected-player { border-color: var(--blue) !important; background: #0d47a1 !important; box-shadow: 0 0 10px var(--blue); }
 
-        footer { position: fixed; bottom: 0; width: 100%; height: 90px; background: #1a1a1a; border-top: 2px solid #444; display: flex; align-items: center; padding: 0 10px; gap: 8px; box-sizing: border-box; }
-        .score-board { display: flex; align-items: center; gap: 3px; background: #000; padding: 4px 8px; border-radius: 6px; border: 1px solid #555; }
-        .score-num { font-size: 34px; font-weight: bold; color: var(--gold); min-width: 45px; text-align: center; line-height: 1; }
-        .score-label { font-size: 9px; color: #aaa; text-align: center; display: block; margin-bottom: 2px; }
-        .score-btn { width: 38px; height: 38px; background: #444; border: none; color: #fff; font-size: 22px; cursor: pointer; border-radius: 4px; }
+        footer { position: fixed; bottom: 0; width: 100%; height: 95px; background: #1a1a1a; border-top: 2px solid #444; display: flex; align-items: center; padding: 0 10px; gap: 8px; box-sizing: border-box; z-index: 1000; }
+        .score-board { display: flex; align-items: center; gap: 5px; background: #000; padding: 5px 10px; border-radius: 6px; border: 1px solid #555; }
+        .score-num { font-size: 38px; font-weight: bold; color: var(--gold); min-width: 50px; text-align: center; }
+        .score-label { font-size: 9px; color: #aaa; text-align: center; display: block; }
+        .score-btn { width: 42px; height: 42px; background: #444; border: none; color: #fff; font-size: 24px; cursor: pointer; border-radius: 4px; }
 
-        /* モーダル */
-        #startup-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; }
-        .medama-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        .medama-slot { width: 100px; height: 65px; background: rgba(255,255,255,0.1); border: 2px dashed #777; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .medama-slot input { width: 85%; background: #333; border: 1px solid #555; color: #fff; font-size: 10px; text-align: center; margin-top: 2px; }
-
-        /* スマホ用レスポンシブ調整 */
-        @media screen and (max-width: 600px) {
-            .container { flex-direction: column; overflow-y: auto; }
-            .court-area { height: 600px; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-            footer { height: 100px; flex-wrap: wrap; justify-content: center; }
-        }
+        #startup-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="startup-modal">
-    <h2 style="color:var(--gold); margin-bottom:10px;">初期目玉設定</h2>
-    <div class="medama-grid">
-        <div class="medama-slot">P4<input id="no-4" placeholder="番"><input id="name-4" placeholder="氏名"></div>
-        <div class="medama-slot">P3<input id="no-3" placeholder="番"><input id="name-3" placeholder="氏名"></div>
-        <div class="medama-slot">P2<input id="no-2" placeholder="番"><input id="name-2" placeholder="氏名"></div>
-        <div class="medama-slot">P5<input id="no-5" placeholder="番"><input id="name-5" placeholder="氏名"></div>
-        <div class="medama-slot">P6<input id="no-6" placeholder="番"><input id="name-6" placeholder="氏名"></div>
-        <div class="medama-slot">P1<input id="no-1" placeholder="番"><input id="name-1" placeholder="氏名"></div>
+    <h2 style="color:var(--gold);">初期目玉設定</h2>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P4<input id="no-4" style="width:80%"><input id="name-4" style="width:80%"></div>
+        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P3<input id="no-3" style="width:80%"><input id="name-3" style="width:80%"></div>
+        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P2<input id="no-2" style="width:80%"><input id="name-2" style="width:80%"></div>
+        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P5<input id="no-5" style="width:80%"><input id="name-5" style="width:80%"></div>
+        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P6<input id="no-6" style="width:80%"><input id="name-6" style="width:80%"></div>
+        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P1<input id="no-1" style="width:80%"><input id="name-1" style="width:80%"></div>
     </div>
-    <button class="score-btn" style="width:220px; margin-top:20px; background:var(--blue); font-size:16px;" onclick="initGame()">試合開始</button>
+    <button class="score-btn" style="width:200px; margin-top:20px; background:var(--blue); font-size:16px;" onclick="initGame()">試合開始</button>
 </div>
 
 <div class="container">
-    <div class="court-area" id="court"></div>
+    <div class="court-wrapper">
+        <div class="court-area" id="court"></div>
+    </div>
     <div class="sidebar">
         <div class="bench-list" id="bench"></div>
-        <div style="font-size:9px; color:#888; margin-top:5px; border-top:1px solid #333; padding-top:2px;">リアルタイム分析</div>
-        <div id="live-feedback">待機中...</div>
+        <div id="live-feedback"></div>
     </div>
 </div>
 
 <footer>
     <div class="score-board">
-        <div>
-            <span class="score-label">MY TEAM</span>
-            <button class="score-btn" onclick="modifyScore('us', 1)">+</button>
-        </div>
+        <div><span class="score-label">自チーム</span><button class="score-btn" onclick="modifyScore('us', 1)">+</button></div>
         <span class="score-num" id="score-us">0</span>
         <span style="font-size:20px;">-</span>
         <span class="score-num" id="score-them">0</span>
-        <div>
-            <span class="score-label">ENEMY</span>
-            <button class="score-btn" onclick="modifyScore('them', 1)">+</button>
-        </div>
+        <div><span class="score-label">相手</span><button class="score-btn" onclick="modifyScore('them', 1)">+</button></div>
         <div style="margin-left:8px; border-left:1px solid #444; padding-left:8px;">
             <span style="font-size:9px;">ROT</span><br>
             <span style="font-size:24px; font-weight:bold; color:var(--blue);">S<span id="current-rot">1</span></span>
         </div>
     </div>
-    <div style="display:flex; flex-direction:column; gap:5px;">
-        <button class="score-btn" style="width:80px; font-size:13px; background:var(--gold);" onclick="finishGame()">試合終了</button>
-        <button class="score-btn" style="width:80px; font-size:11px; background:#444;" onclick="undo()">戻る</button>
+    <div style="display:flex; flex-direction:column; gap:4px;">
+        <button class="score-btn" style="width:75px; font-size:13px; background:var(--gold);" onclick="finishGame()">終了</button>
+        <button class="score-btn" style="width:75px; font-size:11px; background:#444;" onclick="undo()">戻る</button>
     </div>
 </footer>
 
 <script>
-    // --- データ管理ロジック ---
-    const STORAGE_KEY = 'vstats_save_data';
+    const STORAGE_KEY = 'vstats_v7_1';
     let players = Array.from({length: 15}, (_, i) => ({
         id: i, no: i+1, name: `選手${i+1}`,
         spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0},
@@ -125,30 +122,11 @@
     let history = [];
     let swapTarget = null;
 
-    // --- 保存/読み込み ---
-    function saveToLocal() {
-        const data = { players, courtIds, score, currentRot, serveRights, rotStats, history };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        updateLiveFeedback();
+    function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({players, courtIds, score, currentRot, serveRights, rotStats, history}));
+        updateFeedback();
     }
 
-    function loadFromLocal() {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            const data = JSON.parse(saved);
-            Object.assign(players, data.players);
-            courtIds = data.courtIds;
-            score = data.score;
-            currentRot = data.currentRot;
-            serveRights = data.serveRights;
-            rotStats = data.rotStats;
-            history = data.history;
-            document.getElementById('startup-modal').style.display = 'none';
-            render();
-        }
-    }
-
-    // --- ゲーム進行 ---
     function initGame() {
         [1,2,3,4,5,6].forEach(p => {
             const noVal = document.getElementById(`no-${p}`).value;
@@ -157,13 +135,13 @@
             if(nameVal) players[p-1].name = nameVal;
         });
         document.getElementById('startup-modal').style.display = 'none';
-        saveToLocal();
-        render();
+        save(); render();
     }
 
     function render() {
         const court = document.getElementById('court');
         court.innerHTML = '';
+        // 前衛(P4,3,2) 後衛(P5,6,1) の順にグリッド配置
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const id = courtIds[idx];
             const p = players[id];
@@ -172,8 +150,8 @@
             card.innerHTML = `
                 <div class="player-header">
                     <span onclick="selectSwap(${id})">🔄</span>
-                    <input type="text" value="#${p.no}" onchange="players[${id}].no=this.value; saveToLocal();">
-                    <input type="text" value="${p.name}" onchange="players[${id}].name=this.value; saveToLocal();">
+                    <input type="text" value="#${p.no}" onchange="players[${id}].no=this.value; save();">
+                    <input type="text" value="${p.name}" onchange="players[${id}].name=this.value; save();">
                 </div>
                 ${createRow(id, 'スパイク', 'spike', ['◎','○','△','×'])}
                 ${createRow(id, 'レセプション', 'rec', ['A','B','C','×'])}
@@ -185,7 +163,7 @@
         });
 
         const bench = document.getElementById('bench');
-        bench.innerHTML = '<div style="font-size:9px; color:#666; margin-bottom:4px;">ベンチ</div>';
+        bench.innerHTML = '<div style="font-size:9px; color:#888;">ベンチ</div>';
         players.forEach(p => {
             if(courtIds.includes(p.id)) return;
             const item = document.createElement('div');
@@ -194,9 +172,9 @@
             item.innerHTML = `#${p.no} ${p.name}`;
             bench.appendChild(item);
         });
-        document.getElementById('current-rot').innerText = currentRot;
         document.getElementById('score-us').innerText = score.us;
         document.getElementById('score-them').innerText = score.them;
+        document.getElementById('current-rot').innerText = currentRot;
     }
 
     function createRow(pid, label, cat, btns) {
@@ -213,7 +191,7 @@
                 <div class="stat-line">
                     ${counts.map(c=>`<span>${c}</span>`).join('')}
                 </div>
-                <div class="eff-val ${eff > 40 ? 'high-eff' : ''}">${eff}%</div>
+                <div class="eff-val">${eff}%</div>
             </div>
         `;
     }
@@ -226,8 +204,7 @@
         score[side] += val;
         if(val > 0) { if(side === 'us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; }
         history.push({type: 'score', side, val, rotated, prevServeRights});
-        saveToLocal();
-        render();
+        save(); render();
     }
 
     function rotate() {
@@ -236,18 +213,11 @@
         currentRot = currentRot === 6 ? 1 : currentRot + 1;
     }
 
-    function reverseRotate() {
-        const p = courtIds;
-        courtIds = [p[5], p[0], p[1], p[2], p[3], p[4]];
-        currentRot = currentRot === 1 ? 6 : currentRot - 1;
-    }
-
     function record(pid, cat, type) {
         const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type;
         players[pid][cat][key]++;
-        history.push({type: 'stat', pid, cat, key});
-        saveToLocal();
-        render();
+        history.push({type: 'stat', pid, cat, key, label: players[pid].name + " " + cat});
+        save(); render();
     }
 
     function undo() {
@@ -257,11 +227,22 @@
         else if(last.type === 'score') {
             score[last.side] -= last.val;
             if(last.val > 0) { if(last.side === 'us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; }
-            if(last.rotated) reverseRotate();
+            if(last.rotated) { const p = courtIds; courtIds = [p[5], p[0], p[1], p[2], p[3], p[4]]; currentRot = currentRot === 1 ? 6 : currentRot - 1; }
             serveRights = last.prevServeRights;
         }
-        saveToLocal();
-        render();
+        save(); render();
+    }
+
+    function updateFeedback() {
+        const fb = document.getElementById('live-feedback');
+        let html = "【入力履歴】\n";
+        history.slice(-3).reverse().forEach(h => {
+            html += `<div class="history-log">${h.type==='stat' ? h.label : h.side + "点追加"}</div>`;
+        });
+        html += "\n【分析】\n";
+        const worst = [...rotStats].map((s,i)=>({i,d:s.plus-s.minus})).slice(1).sort((a,b)=>a.d-b.d)[0];
+        if(worst.d < 0) html += `S${worst.i}ローテ失点中(${worst.d})`;
+        fb.innerHTML = html;
     }
 
     function selectSwap(id) {
@@ -273,42 +254,30 @@
             if(idxB !== -1) courtIds[idxB] = swapTarget;
             swapTarget = null;
         }
-        saveToLocal();
-        render();
-    }
-
-    function updateLiveFeedback() {
-        const log = document.getElementById('live-feedback');
-        let text = "【戦況分析】\n";
-        const worst = [...rotStats].map((s,i)=>({i,d:s.plus-s.minus})).slice(1).sort((a,b)=>a.d-b.d)[0];
-        if(worst.d < 0) text += `⚠️ S${worst.i}ローテで苦戦中（差:${worst.d}）\n`;
-        
-        const topSpiker = [...players].sort((a,b)=>getEff(b.spike)-getEff(a.spike))[0];
-        if(getEff(topSpiker.spike) > 0) text += `🔥 #${topSpiker.no}${topSpiker.name}が好調\n`;
-        
-        const totalPoints = score.us;
-        if(totalPoints > 0 && totalPoints % 5 === 0) text += `📢 中盤戦、集中力を切らさずに！\n`;
-        
-        log.innerText = text;
+        save(); render();
     }
 
     function finishGame() {
-        if(confirm("試合を終了して目玉画面に戻りますか？データはリセットされます。")) {
+        if(confirm("データをクリアして初期画面に戻りますか？")) {
             localStorage.removeItem(STORAGE_KEY);
             location.reload();
         }
     }
 
-    const getEff = (s) => {
-        const t = s.ex + s.ok + s.bad + s.miss;
-        return t > 0 ? ((s.ex - s.miss) / t * 100).toFixed(1) : "0.0";
-    };
-    const getRecRate = (r) => {
-        const t = r.a + r.b + r.c + r.miss;
-        return t > 0 ? ((r.a * 100 + r.b * 50) / t).toFixed(1) : "0.0";
-    };
+    const getEff = (s) => { const t = s.ex + s.ok + s.bad + s.miss; return t > 0 ? ((s.ex - s.miss) / t * 100).toFixed(1) : "0.0"; };
+    const getRecRate = (r) => { const t = r.a + r.b + r.c + r.miss; return t > 0 ? ((r.a * 100 + r.b * 50) / t).toFixed(1) : "0.0"; };
 
-    window.onload = loadFromLocal;
+    window.onload = () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if(saved) {
+            const data = JSON.parse(saved);
+            Object.assign(players, data.players); courtIds = data.courtIds; score = data.score;
+            currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats; history = data.history;
+            document.getElementById('startup-modal').style.display = 'none';
+            render();
+        }
+        updateFeedback();
+    };
 </script>
 </body>
 </html>
