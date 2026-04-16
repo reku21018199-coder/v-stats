@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>V-Stats Pro v6.0</title>
+    <title>V-Stats Pro v6.1</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -14,19 +14,19 @@
         .court-area { flex: 8; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 3px; background: var(--court-green); padding: 5px; border-radius: 4px; border: 2px solid #fff; }
         .sidebar { flex: 1.5; background: #222; padding: 5px; border-radius: 4px; overflow-y: auto; }
 
-        /* 選手カード：余白を極限まで排除 */
         .player-card { background: var(--card-bg); border-radius: 4px; padding: 2px; display: flex; flex-direction: column; border: 2px solid transparent; height: 100%; box-sizing: border-box; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 18px; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 18px; margin-bottom: 1px; }
         .player-header input { background: transparent; border: none; color: #fff; font-size: 10px; width: 48%; font-weight: bold; }
         
-        /* 項目セクション：ボタン+カウント+％ */
-        .item-group { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; }
+        /* 項目セクション：日本語ラベル追加 */
+        .item-group { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; position: relative; }
         .item-group:last-child { border-bottom: none; }
-        .item-label { font-size: 8px; color: #888; text-align: center; line-height: 1; }
+        .item-label { font-size: 8px; color: var(--gold); font-weight: bold; text-align: left; padding-left: 2px; line-height: 1; margin-top: 1px; }
+        
         .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; padding: 1px 0; }
-        .action-btn { border: none; border-radius: 1px; color: #fff; font-size: 10px; padding: 4px 0; cursor: pointer; font-weight: bold; }
-        .stat-line { display: flex; justify-content: space-around; font-size: 8px; line-height: 1.1; }
-        .eff-val { font-size: 10px; text-align: center; font-weight: bold; line-height: 1.1; }
+        .action-btn { border: none; border-radius: 1px; color: #fff; font-size: 10px; padding: 3px 0; cursor: pointer; font-weight: bold; }
+        .stat-line { display: flex; justify-content: space-around; font-size: 8px; line-height: 1; color: #aaa; }
+        .eff-val { font-size: 9px; text-align: center; font-weight: bold; line-height: 1.1; margin-bottom: 1px; }
         .high-eff { color: #00ff00; }
 
         .bench-item { background: #333; padding: 4px; margin-bottom: 2px; border-radius: 2px; cursor: pointer; border: 1px solid transparent; font-size: 10px; }
@@ -37,29 +37,28 @@
         .score-num { font-size: 32px; font-weight: bold; color: var(--gold); min-width: 40px; text-align: center; }
         .score-btn { width: 35px; height: 35px; background: #444; border: none; color: #fff; font-size: 20px; cursor: pointer; border-radius: 4px; }
 
-        /* 初期設定モーダル */
         #startup-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .medama-slot { width: 110px; height: 70px; background: rgba(0,0,0,0.5); border: 2px dashed #fff; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 5px; }
         .medama-slot input { width: 90%; background: #444; border: 1px solid #666; color: #fff; font-size: 10px; text-align: center; margin-top: 2px; }
 
         #feedback-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; padding: 20px; overflow-y: auto; }
-        .report-card { background: #222; padding: 20px; border-radius: 12px; max-width: 1000px; margin: 0 auto; color: #eee; }
-        .feedback-text { background: #333; padding: 15px; border-left: 4px solid var(--blue); margin: 10px 0; white-space: pre-wrap; line-height: 1.6; }
+        .report-card { background: #222; padding: 20px; border-radius: 12px; max-width: 1000px; margin: 0 auto; }
+        .feedback-text { background: #333; padding: 15px; border-left: 4px solid var(--blue); margin: 10px 0; white-space: pre-wrap; line-height: 1.6; color: #fff; }
+        table { width: 100%; border-collapse: collapse; color: #fff; }
+        th, td { border: 1px solid #555; padding: 8px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="startup-modal">
-    <h1 style="color:var(--gold)">STARTING LINEUP & EDIT</h1>
-    <div style="display:flex; gap:20px;">
-        <div class="medama-grid" style="display:grid; grid-template-columns: repeat(3, 1fr);">
-            <div class="medama-slot" id="slot-4">P4<input id="no-4" placeholder="背番号"><input id="name-4" placeholder="氏名"></div>
-            <div class="medama-slot" id="slot-3">P3<input id="no-3" placeholder="背番号"><input id="name-3" placeholder="氏名"></div>
-            <div class="medama-slot" id="slot-2">P2<input id="no-2" placeholder="背番号"><input id="name-2" placeholder="氏名"></div>
-            <div class="medama-slot" id="slot-5">P5<input id="no-5" placeholder="背番号"><input id="name-5" placeholder="氏名"></div>
-            <div class="medama-slot" id="slot-6">P6<input id="no-6" placeholder="背番号"><input id="name-6" placeholder="氏名"></div>
-            <div class="medama-slot" id="slot-1">P1<input id="no-1" placeholder="背番号"><input id="name-1" placeholder="氏名"></div>
-        </div>
+    <h1 style="color:var(--gold)">初期目玉設定 & 選手編集</h1>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr);">
+        <div class="medama-slot">P4<input id="no-4" placeholder="背番号"><input id="name-4" placeholder="氏名"></div>
+        <div class="medama-slot">P3<input id="no-3" placeholder="背番号"><input id="name-3" placeholder="氏名"></div>
+        <div class="medama-slot">P2<input id="no-2" placeholder="背番号"><input id="name-2" placeholder="氏名"></div>
+        <div class="medama-slot">P5<input id="no-5" placeholder="背番号"><input id="name-5" placeholder="氏名"></div>
+        <div class="medama-slot">P6<input id="no-6" placeholder="背番号"><input id="name-6" placeholder="氏名"></div>
+        <div class="medama-slot">P1<input id="no-1" placeholder="背番号"><input id="name-1" placeholder="氏名"></div>
     </div>
     <button class="score-btn" style="width:200px; margin-top:20px; background:var(--blue); font-size:16px;" onclick="initGame()">試合開始</button>
 </div>
@@ -82,12 +81,12 @@
         </div>
     </div>
     <button class="score-btn" style="width:100px; font-size:14px; background:var(--gold);" onclick="finishGame()">分析</button>
-    <button class="score-btn" style="width:60px; font-size:12px; background:#444;" onclick="undo()">戻す</button>
+    <button class="score-btn" style="width:60px; font-size:12px; background:#444;" onclick="undo()">戻る</button>
 </footer>
 
 <div id="feedback-modal">
     <div class="report-card" id="report-body"></div>
-    <button class="score-btn" style="width:100%; margin-top:10px; background:#444;" onclick="document.getElementById('feedback-modal').style.display='none'">戻る</button>
+    <button class="score-btn" style="width:100%; margin-top:10px; background:#444;" onclick="document.getElementById('feedback-modal').style.display='none'">閉じる</button>
 </div>
 
 <script>
@@ -103,7 +102,7 @@
     let currentRot = 1;
     let serveRights = 'us';
     let rotStats = Array.from({length: 7}, () => ({plus:0, minus:0}));
-    let history = [];
+    let history = []; // 統合履歴管理
     let swapTarget = null;
 
     function initGame() {
@@ -131,17 +130,17 @@
                     <input type="text" value="#${p.no}">
                     <input type="text" value="${p.name}">
                 </div>
-                ${createRow(id, 'SPIKE', 'spike', ['◎','○','△','×'])}
-                ${createRow(id, 'SERVE', 'serve', ['◎','○','△','×'])}
-                ${createRow(id, 'REC', 'rec', ['A','B','C','×'])}
-                ${createRow(id, 'DIG', 'dig', ['◎','○','△','×'])}
-                ${createRow(id, 'BLOCK', 'block', ['◎','○','△','×'])}
+                ${createRow(id, 'スパイク', 'spike', ['◎','○','△','×'])}
+                ${createRow(id, 'レセプション', 'rec', ['A','B','C','×'])}
+                ${createRow(id, 'サーブ', 'serve', ['◎','○','△','×'])}
+                ${createRow(id, 'ブロック', 'block', ['◎','○','△','×'])}
+                ${createRow(id, 'ディグ', 'dig', ['◎','○','△','×'])}
             `;
             court.appendChild(card);
         });
 
         const bench = document.getElementById('bench');
-        bench.innerHTML = '<div style="font-size:9px; color:#666;">BENCH</div>';
+        bench.innerHTML = '<div style="font-size:9px; color:#666;">ベンチ</div>';
         players.forEach(p => {
             if(courtIds.includes(p.id)) return;
             const item = document.createElement('div');
@@ -161,6 +160,7 @@
         const cols = ['var(--gold)','var(--green)','var(--orange)','var(--red)'];
         return `
             <div class="item-group">
+                <span class="item-label">${label}</span>
                 <div class="btn-row">
                     ${btns.map((b,i)=>`<button class="action-btn" style="background:${cols[i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}
                 </div>
@@ -173,10 +173,26 @@
     }
 
     function modifyScore(side, val) {
-        if(side === 'us' && val > 0 && serveRights === 'them') { rotate(); serveRights = 'us'; }
-        else if (side === 'them' && val > 0) { serveRights = 'them'; }
+        let rotated = false;
+        let prevServeRights = serveRights;
+        
+        if(side === 'us' && val > 0 && serveRights === 'them') { 
+            rotate(); 
+            serveRights = 'us'; 
+            rotated = true;
+        } else if (side === 'them' && val > 0) { 
+            serveRights = 'them'; 
+        }
+
         score[side] += val;
-        if(val > 0) { if(side === 'us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; }
+        if(val > 0) { 
+            if(side === 'us') rotStats[currentRot].plus++; 
+            else rotStats[currentRot].minus++; 
+        }
+        
+        // 履歴に点数操作を保存
+        history.push({type: 'score', side, val, rotated, prevServeRights});
+        
         document.getElementById(`score-${side}`).innerText = score[side];
         render();
     }
@@ -185,6 +201,12 @@
         const p = courtIds;
         courtIds = [p[1], p[2], p[3], p[4], p[5], p[0]];
         currentRot = currentRot === 6 ? 1 : currentRot + 1;
+    }
+
+    function reverseRotate() {
+        const p = courtIds;
+        courtIds = [p[5], p[0], p[1], p[2], p[3], p[4]];
+        currentRot = currentRot === 1 ? 6 : currentRot - 1;
     }
 
     const getEff = (s) => {
@@ -199,7 +221,26 @@
     function record(pid, cat, type) {
         const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type;
         players[pid][cat][key]++;
-        history.push({pid, cat, key});
+        history.push({type: 'stat', pid, cat, key});
+        render();
+    }
+
+    function undo() {
+        if(history.length === 0) return;
+        const last = history.pop();
+
+        if(last.type === 'stat') {
+            players[last.pid][last.cat][last.key]--;
+        } else if(last.type === 'score') {
+            score[last.side] -= last.val;
+            if(last.val > 0) {
+                if(last.side === 'us') rotStats[currentRot].plus--;
+                else rotStats[currentRot].minus--;
+            }
+            if(last.rotated) reverseRotate();
+            serveRights = last.prevServeRights;
+            document.getElementById(`score-${last.side}`).innerText = score[last.side];
+        }
         render();
     }
 
@@ -220,29 +261,26 @@
         const body = document.getElementById('report-body');
         modal.style.display = 'block';
 
-        let fb = "【戦術フィードバック】\n";
+        let fb = "【詳細フィードバック】\n";
+        let worstRot = {i: 0, diff: 999};
+        
         rotStats.forEach((s, i) => {
             if(i === 0) return;
             const diff = s.plus - s.minus;
-            if(diff < -2) fb += `● S${i}ローテが深刻な失点源です。サイドアウト率を上げるため、レセプション体系を見直してください。\n`;
-            else if(diff > 2) fb += `★ S${i}ローテで連続得点が取れています。この時のサーバーを軸にした構成を維持しましょう。\n`;
+            if(diff < worstRot.diff) worstRot = {i, diff};
+            if(diff < -2) fb += `● S${i}ローテでの失点が目立ちます。サイドアウトが取れず連続失点しているため、このローテの攻撃枚数や守備位置を確認してください。\n`;
+            else if(diff > 2) fb += `★ S${i}ローテは非常に安定しています。この局面でのサーブとブロックの連携が勝因です。\n`;
         });
 
-        let html = `<h2>総合分析レポート</h2><div class="feedback-text">${fb}</div>`;
-        html += `<table><tr><th>選手</th><th>SP率</th><th>SV率</th><th>受球率</th></tr>`;
+        fb += `\n【総評】\n本日の試合では、S${worstRot.i}ローテが最大の弱点となっていました。ここでの決定率を上げることが次戦への課題です。`;
+
+        let html = `<h2>分析レポート</h2><div class="feedback-text">${fb}</div>`;
+        html += `<table><tr><th>選手</th><th>スパイク</th><th>サーブ</th><th>受球率</th></tr>`;
         players.forEach(p => {
             html += `<tr><td>#${p.no} ${p.name}</td><td>${getEff(p.spike)}%</td><td>${getEff(p.serve)}%</td><td>${getRecRate(p.rec)}%</td></tr>`;
         });
         html += `</table>`;
         body.innerHTML = html;
-    }
-
-    function undo() {
-        if(history.length > 0) {
-            const last = history.pop();
-            players[last.pid][last.cat][last.key]--;
-            render();
-        }
     }
 </script>
 </body>
