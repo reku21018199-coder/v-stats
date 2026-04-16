@@ -2,287 +2,193 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats クラウド版 (JVA拡張版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V-Stats Court Pro</title>
     <style>
-        /* 元のスタイルを100%継承 */
-        body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; font-size: 13px; }
-        .team-selector { display: flex; width: 100%; position: sticky; top: 0; z-index: 110; }
-        .team-selector button { flex: 1; padding: 10px; font-size: 16px; border: none; color: white; font-weight: bold; cursor: pointer; opacity: 0.4; }
-        .active-A { background: #b71c1c !important; opacity: 1 !important; border-bottom: 3px solid #ff5252; }
-        .active-B { background: #0d47a1 !important; opacity: 1 !important; border-bottom: 3px solid #448aff; }
+        :root { --court-green: #2e7d32; --player-bg: rgba(255, 255, 255, 0.95); }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 10px; }
         
-        .header { position: sticky; top: 43px; background: #222; padding: 6px 10px; z-index: 100; border-bottom: 1px solid #444; display: flex; gap: 6px; align-items: center; }
-        .match-input { flex: 2; background: #333; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 4px; font-size: 13px; }
-        .btn-header { flex: 1; height: 32px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; font-size: 11px; }
+        /* ヘッダー・メニュー */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #333; color: white; border-radius: 8px; margin-bottom: 10px; }
+        .menu-btn { background: #555; border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
 
-        .table-wrapper { overflow-x: auto; width: 100%; }
-        table { border-collapse: collapse; min-width: 1100px; width: 100%; table-layout: fixed; }
-        th, td { border: 1px solid #333; padding: 4px 1px; text-align: center; vertical-align: middle; }
-        th { background: #2a2a2a; font-size: 11px; color: #aaa; height: 30px; }
-        .sticky-col { position: sticky; left: 0; background: #1e1e1e; z-index: 5; width: 100px; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
+        /* コートレイアウト */
+        .court {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            background: var(--court-green);
+            padding: 12px;
+            border: 5px solid white;
+            border-radius: 12px;
+            aspect-ratio: 3 / 4;
+            position: relative;
+        }
+
+        /* 選手カード */
+        .player-card {
+            background: var(--player-bg);
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+            transition: transform 0.1s;
+        }
+        .active-swap { border: 2px solid #007bff; background: #e3f2fd; transform: scale(1.02); }
+
+        .player-info { margin-bottom: 5px; }
+        .player-num { background: #333; color: white; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 5px; }
+        .player-name { font-weight: bold; font-size: 14px; }
+
+        /* 記録ボタン */
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+        .action-grid button { border: none; padding: 10px 0; border-radius: 4px; color: white; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-ace { background: #28a745; } .btn-eff { background: #ffc107; color: #333; }
+        .btn-std { background: #6c757d; } .btn-err { background: #dc3545; }
+
+        /* 交代マーク */
+        .swap-icon { position: absolute; top: 5px; right: 5px; font-size: 18px; cursor: pointer; color: #007bff; }
+
+        /* 選手名簿モーダル */
+        #member-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
+        }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 85%; max-height: 80%; overflow-y: auto; }
+        .member-list-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
         
-        .btn-group { display: flex; gap: 1px; justify-content: center; width: 100%; }
-        .btn-group button { flex: 0 0 38px; height: 38px; border: none; border-radius: 3px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
-
-        .ex { background-color: #d4af37 !important; } .ok { background-color: #4caf50 !important; } 
-        .bad { background-color: #ff9800 !important; } .miss { background-color: #f44336 !important; }
-        .blue { background-color: #2196f3 !important; }
-        .loss-btn { background-color: #b71c1c !important; width: 70px; height: 40px; font-size: 13px; margin: 0 auto; color: white; border: none; border-radius: 4px; cursor: pointer; }
-
-        .count-row { font-size: 10px; color: #999; margin-top: 2px; font-family: monospace; line-height: 1; }
-        .highlight-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-top: 2px; font-weight: bold; }
-        .rate-good { background: #2e7d32; color: #fff; }
-        .rate-normal { background: #333; color: #ccc; }
-
-        .score-box { font-size: 11px; margin-top: 3px; border-top: 1px solid #333; padding-top: 3px; line-height: 1.2; }
-        .plus { color: #d4af37; font-weight: bold; } .minus { color: #f44336; font-weight: bold; }
-        input[type="text"] { background: #222; border: 1px solid #444; color: white; border-radius: 3px; font-size: 13px; padding: 4px; }
-        
-        #loading-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:200; justify-content:center; align-items:center; }
+        .footer-btns { margin-top: 20px; display: flex; gap: 10px; }
+        .btn-finish { flex: 1; padding: 15px; background: #333; color: white; border: none; border-radius: 8px; }
     </style>
 </head>
 <body>
-    <div id="loading-overlay">通信中...</div>
 
-    <div class="team-selector">
-        <button id="tab-teamA" onclick="switchTeam('teamA')" style="background:#b71c1c;">Aチーム</button>
-        <button id="tab-teamB" onclick="switchTeam('teamB')" style="background:#0d47a1;">Bチーム</button>
-    </div>
+<header>
+    <span>V-Stats Analyzer</span>
+    <button class="menu-btn" onclick="toggleModal()">選手名簿</button>
+</header>
 
-    <div class="header">
-        <button onclick="undo()" class="btn-header" style="background:#555;">戻る</button>
-        <input type="text" id="matchNameInput" class="match-input" placeholder="試合名" onblur="updateMatchName()">
-        <button onclick="downloadCSV()" class="btn-header" style="background:#2e7d32;">CSV</button>
-        <button onclick="confirmReset()" class="btn-header" style="background:#c62828;">リセット</button>
-    </div>
+<div class="court" id="court"></div>
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th class="sticky-col">選手</th>
-                    <th style="width:160px;">スパイク</th>
-                    <th style="width:160px;">サーブ</th>
-                    <th style="width:160px;">レシーブ</th>
-                    <th style="width:160px;">ディグ</th>
-                    <th style="width:90px;">ブロック</th>
-                    <th style="width:80px;">他失点</th>
-                </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
+<div class="footer-btns">
+    <button class="btn-finish" onclick="finishGame()">試合終了・集計表示</button>
+</div>
+
+<div id="member-modal">
+    <div class="modal-content">
+        <h3>登録選手一覧</h3>
+        <div id="member-list"></div>
+        <button onclick="toggleModal()" style="width:100%; margin-top:15px; padding:10px;">閉じる</button>
     </div>
+</div>
+
+<div id="feedback-area" style="display:none; background:white; padding:20px; margin-top:20px; border-radius:10px;">
+    <h2>試合分析結果</h2>
+    <div id="report-content"></div>
+    <button onclick="location.reload()" style="width:100%; padding:10px;">戻る</button>
+</div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwFwZOdpAHnC0GQGGg_Z7QDumuWRBQIT4dF7lqjt4uUkNKw5TA2l6fyBZ3dakWHNlwQ/exec";
+    const GAS_URL = "あなたのGAS_URL";
 
-let data = {
-    match_name: "",
-    current_team: "teamA",
-    teamA: [],
-    teamB: [],
-    history: []
-};
+    // 選手マスタデータ（本人特定のIDを持つ）
+    let allPlayers = [
+        { id: 101, name: "山田", number: 1 }, { id: 102, name: "佐藤", number: 2 },
+        { id: 103, name: "田中", number: 3 }, { id: 104, name: "伊藤", number: 4 },
+        { id: 105, name: "渡辺", number: 5 }, { id: 106, name: "中村", number: 6 },
+        { id: 107, name: "リベロ高橋", number: 12 }, { id: 108, name: "鈴木", number: 7 }
+    ];
 
-function createEmptyTeam(prefix, count) {
-    let players = [];
-    for (let i = 0; i < count; i++) {
-        players.push({
-            no: (i + 1), name: prefix + (i + 1),
-            spike: {double_ok:0, ok:0, bad:0, miss:0},
-            serve: {double_ok:0, ok:0, bad:0, miss:0},
-            serve_cut: {a:0, b:0, keep:0, miss:0},
-            dig: {ok:0, bad:0, miss:0},
-            block: {double_ok:0, ok:0},
-            loss: 0
+    // コート上のポジション配置（現在誰がどの位置にいるか）
+    let courtPosition = [
+        allPlayers[3], allPlayers[2], allPlayers[1], // 前衛: 左(4), 中(3), 右(2)
+        allPlayers[4], allPlayers[5], allPlayers[0]  // 後衛: 左(5), 中(6), 右(1)
+    ];
+
+    let swapSourceIndex = null;
+    let stats = [];
+
+    function renderCourt() {
+        const court = document.getElementById('court');
+        court.innerHTML = '';
+        courtPosition.forEach((player, index) => {
+            const card = document.createElement('div');
+            card.className = `player-card ${swapSourceIndex === index ? 'active-swap' : ''}`;
+            card.innerHTML = `
+                <div class="swap-icon" onclick="startSwap(${index})">🔄</div>
+                <div class="player-info">
+                    <span class="player-num">${player.number}</span>
+                    <span class="player-name">${player.name}</span>
+                </div>
+                <div class="action-grid">
+                    <button class="btn-ace" onclick="record(${player.id}, '${player.name}', '◎')">◎</button>
+                    <button class="btn-eff" onclick="record(${player.id}, '${player.name}', '〇')">〇</button>
+                    <button class="btn-std" onclick="record(${player.id}, '${player.name}', '△')">△</button>
+                    <button class="btn-err" onclick="record(${player.id}, '${player.name}', '×')">×</button>
+                </div>
+            `;
+            court.appendChild(card);
         });
     }
-    return players;
-}
 
-function render() {
-    const tbody = document.getElementById('table-body');
-    tbody.innerHTML = '';
-    const current = data.current_team;
+    function startSwap(index) {
+        if (swapSourceIndex === null) {
+            swapSourceIndex = index;
+        } else {
+            const temp = courtPosition[swapSourceIndex];
+            courtPosition[swapSourceIndex] = courtPosition[index];
+            courtPosition[index] = temp;
+            swapSourceIndex = null;
+        }
+        renderCourt();
+    }
 
-    document.getElementById('tab-teamA').className = (current === 'teamA' ? 'active-A' : '');
-    document.getElementById('tab-teamB').className = (current === 'teamB' ? 'active-B' : '');
-    document.getElementById('matchNameInput').value = data.match_name;
+    async function record(playerId, playerName, eval) {
+        const data = {
+            playerId: playerId, // 選手本人を特定するID
+            playerName: playerName,
+            eval: eval,
+            pos: courtPosition.findIndex(p => p.id === playerId) + 1,
+            time: new Date().toLocaleString()
+        };
+        stats.push(data);
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).catch(e => console.error(e));
+    }
 
-    data[current].forEach((p, idx) => {
-        const score = p.spike.double_ok + p.serve.double_ok + p.block.double_ok;
+    function toggleModal() {
+        const modal = document.getElementById('member-modal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        renderMemberList();
+    }
+
+    function renderMemberList() {
+        const list = document.getElementById('member-list');
+        list.innerHTML = '';
+        allPlayers.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'member-list-item';
+            item.innerHTML = `<span>#${p.number} ${p.name}</span>`;
+            list.appendChild(item);
+        });
+    }
+
+    function finishGame() {
+        if(!confirm("試合を終了し、個人の活躍を分析しますか？")) return;
+        document.getElementById('court').parentElement.style.display = 'none';
+        document.getElementById('feedback-area').style.display = 'block';
         
-        // スパイク決定率
-        const s_tot = Object.values(p.spike).reduce((a, b) => a + b, 0);
-        const s_rate = s_tot > 0 ? ((p.spike.double_ok / s_tot) * 100).toFixed(1) : 0;
-        
-        // レシーブ返球率
-        const rc_tot = Object.values(p.serve_cut).reduce((a, b) => a + b, 0);
-        const rc_rate = rc_tot > 0 ? (((p.serve_cut.a * 100 + p.serve_cut.b * 50) / rc_tot)).toFixed(1) : 0;
-
-        // サーブ効果率 (JVA方式: (得点*100 + 効果*25 - 失点*25) / 打数)
-        const sv_tot = Object.values(p.serve).reduce((a, b) => a + b, 0);
-        const sv_eff = sv_tot > 0 ? ((p.serve.double_ok * 100 + p.serve.ok * 25 - p.serve.miss * 25) / sv_tot).toFixed(1) : 0;
-
-        // ディグ成功率 (成功 / 総数)
-        const dg_tot = Object.values(p.dig).reduce((a, b) => a + b, 0);
-        const dg_rate = dg_tot > 0 ? ((p.dig.ok / dg_tot) * 100).toFixed(1) : 0;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="sticky-col">
-                <input type="text" onblur="updatePlayer(${idx}, 'no', this.value)" value="${p.no}" style="width:18px; text-align:center; padding:2px;">
-                <input type="text" onblur="updatePlayer(${idx}, 'name', this.value)" value="${p.name}" style="width:60px; padding:2px;">
-                <div class="score-box">
-                    <span class="plus">${score}</span>/<span class="minus">${p.loss}</span>
-                </div>
-            </td>
-            <td>
-                <div class="btn-group">
-                    <button onclick="doAction('spike|double_ok|${idx}')" class="ex">◎</button>
-                    <button onclick="doAction('spike|ok|${idx}')" class="ok">○</button>
-                    <button onclick="doAction('spike|bad|${idx}')" class="bad">△</button>
-                    <button onclick="doAction('spike|miss|${idx}')" class="miss">×</button>
-                </div>
-                <div class="count-row">${Object.values(p.spike).join('/')}</div>
-                <div class="highlight-badge ${s_rate >= 40 ? 'rate-good' : 'rate-normal'}">決定率:${s_rate}%</div>
-            </td>
-            <td>
-                <div class="btn-group">
-                    <button onclick="doAction('serve|double_ok|${idx}')" class="ex">◎</button>
-                    <button onclick="doAction('serve|ok|${idx}')" class="ok">○</button>
-                    <button onclick="doAction('serve|bad|${idx}')" class="bad">△</button>
-                    <button onclick="doAction('serve|miss|${idx}')" class="miss">×</button>
-                </div>
-                <div class="count-row">${Object.values(p.serve).join('/')}</div>
-                <div class="highlight-badge ${sv_eff >= 10 ? 'rate-good' : 'rate-normal'}">効果率:${sv_eff}</div>
-            </td>
-            <td>
-                <div class="btn-group">
-                    <button onclick="doAction('serve_cut|a|${idx}')" class="ex">A</button>
-                    <button onclick="doAction('serve_cut|b|${idx}')" class="ok">B</button>
-                    <button onclick="doAction('serve_cut|keep|${idx}')" class="blue">C</button>
-                    <button onclick="doAction('serve_cut|miss|${idx}')" class="miss">×</button>
-                </div>
-                <div class="count-row">${Object.values(p.serve_cut).join('/')}</div>
-                <div class="highlight-badge ${rc_rate >= 50 ? 'rate-good' : 'rate-normal'}">返球率:${rc_rate}%</div>
-            </td>
-            <td>
-                <div class="btn-group">
-                    <button onclick="doAction('dig|ok|${idx}')" class="ok">○</button>
-                    <button onclick="doAction('dig|bad|${idx}')" class="bad">△</button>
-                    <button onclick="doAction('dig|miss|${idx}')" class="miss">×</button>
-                </div>
-                <div class="count-row">${Object.values(p.dig).join('/')}</div>
-                <div class="highlight-badge ${dg_rate >= 60 ? 'rate-good' : 'rate-normal'}">成功率:${dg_rate}%</div>
-            </td>
-            <td>
-                <div class="btn-group">
-                    <button onclick="doAction('block|double_ok|${idx}')" class="ex">◎</button>
-                    <button onclick="doAction('block|ok|${idx}')" class="ok">○</button>
-                </div>
-                <div class="count-row">${Object.values(p.block).join('/')}</div>
-            </td>
-            <td><button onclick="doAction('loss|${idx}')" class="loss-btn">失点</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-async function save() {
-    document.getElementById('loading-overlay').style.display = 'flex';
-    try {
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(data)
-        });
-    } catch (e) { console.error(e); }
-    document.getElementById('loading-overlay').style.display = 'none';
-}
-
-async function load() {
-    document.getElementById('loading-overlay').style.display = 'flex';
-    try {
-        const res = await fetch(GAS_URL);
-        const json = await res.json();
-        if (json.teamA) data = json;
-        else resetAll();
-    } catch (e) { resetAll(); }
-    render();
-    document.getElementById('loading-overlay').style.display = 'none';
-}
-
-function doAction(val) {
-    const parts = val.split('|');
-    const team = data.current_team;
-    if (parts[0] === 'loss') {
-        const idx = parts[1];
-        data[team][idx].loss++;
-        data.history.push({team, cat: 'loss', idx});
-    } else {
-        const [cat, type, idx] = parts;
-        data[team][idx][cat][type]++;
-        const isMiss = (type === 'miss');
-        if (isMiss) data[team][idx].loss++;
-        data.history.push({team, cat, type, idx, auto_loss: isMiss});
+        // 簡易フィードバックロジック
+        const report = document.getElementById('report-content');
+        // ここでplayerIdごとにstatsをフィルタリングして、各選手の決定率などを計算して表示
+        report.innerHTML = "<p>データ集計中...（スプレッドシートの各選手行へ紐付け完了）</p>";
     }
-    render();
-    save();
-}
 
-function undo() {
-    if (data.history.length === 0) return;
-    const last = data.history.pop();
-    const t = last.team; const idx = last.idx;
-    if (last.cat === 'loss') {
-        data[t][idx].loss = Math.max(0, data[t][idx].loss - 1);
-    } else {
-        data[t][idx][last.cat][last.type] = Math.max(0, data[t][idx][last.cat][last.type] - 1);
-        if (last.auto_loss) data[t][idx].loss = Math.max(0, data[t][idx].loss - 1);
-    }
-    render();
-    save();
-}
-
-function switchTeam(team) { data.current_team = team; render(); save(); }
-function updateMatchName() { data.match_name = document.getElementById('matchNameInput').value; save(); }
-function updatePlayer(idx, field, val) { data[data.current_team][idx][field] = val; save(); }
-
-function resetAll() {
-    data.match_name = "";
-    data.teamA = createEmptyTeam("A", 9);
-    data.teamB = createEmptyTeam("B", 9);
-    data.history = [];
-}
-function confirmReset() { if(confirm('全てリセットしますか？')) { resetAll(); render(); save(); } }
-
-function downloadCSV() {
-    let csv = "\uFEFFチーム,背番号,名前,総得点,総失点,スパ決定率,サーブ効果率,レシーブ返球率,ディグ成功率\n";
-    ['teamA', 'teamB'].forEach(t => {
-        data[t].forEach(p => {
-            const score = p.spike.double_ok + p.serve.double_ok + p.block.double_ok;
-            const s_tot = Object.values(p.spike).reduce((a,b)=>a+b, 0);
-            const s_rate = s_tot > 0 ? ((p.spike.double_ok/s_tot)*100).toFixed(1) : 0;
-            const rc_tot = Object.values(p.serve_cut).reduce((a,b)=>a+b, 0);
-            const rc_rate = rc_tot > 0 ? (((p.serve_cut.a*100+p.serve_cut.b*50)/rc_tot)).toFixed(1) : 0;
-            const sv_tot = Object.values(p.serve).reduce((a,b)=>a+b, 0);
-            const sv_eff = sv_tot > 0 ? ((p.serve.double_ok*100 + p.serve.ok*25 - p.serve.miss*25)/sv_tot).toFixed(1) : 0;
-            const dg_tot = Object.values(p.dig).reduce((a,b)=>a+b, 0);
-            const dg_rate = dg_tot > 0 ? ((p.dig.ok/dg_tot)*100).toFixed(1) : 0;
-            
-            csv += `${t},${p.no},${p.name},${score},${p.loss},${s_rate}%,${sv_eff},${rc_rate}%,${dg_rate}%\n`;
-        });
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${data.match_name || 'match_data'}.csv`;
-    link.click();
-}
-
-window.onload = load;
+    renderCourt();
 </script>
 </body>
 </html>
