@@ -5,13 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>V-Stats Court Pro</title>
     <style>
-        :root { --court-green: #2e7d32; --player-bg: rgba(255, 255, 255, 0.95); }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 10px; }
-        
-        /* ヘッダー・メニュー */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #333; color: white; border-radius: 8px; margin-bottom: 10px; }
-        .menu-btn { background: #555; border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-
+        :root {
+            --court-green: #2e7d32;
+            --player-bg: rgba(255, 255, 255, 0.95);
+            --accent-blue: #007bff;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #f4f7f6;
+            margin: 0;
+            padding: 10px;
+            color: #333;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #333;
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .menu-btn {
+            background: #555;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
         /* コートレイアウト */
         .court {
             display: grid;
@@ -23,9 +46,7 @@
             border: 5px solid white;
             border-radius: 12px;
             aspect-ratio: 3 / 4;
-            position: relative;
         }
-
         /* 選手カード */
         .player-card {
             background: var(--player-bg);
@@ -36,75 +57,140 @@
             justify-content: space-between;
             position: relative;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border: 2px solid transparent;
-            transition: transform 0.1s;
+            border: 3px solid transparent;
         }
-        .active-swap { border: 2px solid #007bff; background: #e3f2fd; transform: scale(1.02); }
-
-        .player-info { margin-bottom: 5px; }
-        .player-num { background: #333; color: white; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 5px; }
+        .active-swap {
+            border-color: var(--accent-blue);
+            background: #e3f2fd;
+            transform: scale(1.02);
+        }
+        .player-num {
+            background: #333;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-right: 5px;
+        }
         .player-name { font-weight: bold; font-size: 14px; }
-
         /* 記録ボタン */
-        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-        .action-grid button { border: none; padding: 10px 0; border-radius: 4px; color: white; font-weight: bold; font-size: 12px; cursor: pointer; }
-        .btn-ace { background: #28a745; } .btn-eff { background: #ffc107; color: #333; }
-        .btn-std { background: #6c757d; } .btn-err { background: #dc3545; }
-
-        /* 交代マーク */
-        .swap-icon { position: absolute; top: 5px; right: 5px; font-size: 18px; cursor: pointer; color: #007bff; }
-
-        /* 選手名簿モーダル */
-        #member-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 8px; }
+        .action-grid button {
+            border: none;
+            padding: 12px 0;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
         }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 85%; max-height: 80%; overflow-y: auto; }
-        .member-list-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        
-        .footer-btns { margin-top: 20px; display: flex; gap: 10px; }
-        .btn-finish { flex: 1; padding: 15px; background: #333; color: white; border: none; border-radius: 8px; }
+        .btn-ace { background: #28a745; }
+        .btn-eff { background: #ffc107; color: #333; }
+        .btn-std { background: #6c757d; }
+        .btn-err { background: #dc3545; }
+        /* 交代アイコン */
+        .swap-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--accent-blue);
+        }
+        /* モーダル */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        .btn-finish {
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #feedback-screen {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dashed #ccc; }
     </style>
 </head>
 <body>
 
 <header>
     <span>V-Stats Analyzer</span>
-    <button class="menu-btn" onclick="toggleModal()">選手名簿</button>
+    <button class="menu-btn" onclick="toggleModal()">控え・リベロ</button>
 </header>
 
-<div class="court" id="court"></div>
-
-<div class="footer-btns">
-    <button class="btn-finish" onclick="finishGame()">試合終了・集計表示</button>
+<div id="main-screen">
+    <div class="court" id="court">
+        </div>
+    <button class="btn-finish" onclick="showFeedback()">試合終了・データ分析</button>
 </div>
 
-<div id="member-modal">
+<div id="feedback-screen">
+    <h2>試合分析レポート</h2>
+    <div id="report-body"></div>
+    <button class="btn-finish" onclick="location.reload()">新しい試合を開始</button>
+</div>
+
+<div id="modal-overlay">
     <div class="modal-content">
-        <h3>登録選手一覧</h3>
+        <h3>登録選手・控え一覧</h3>
         <div id="member-list"></div>
-        <button onclick="toggleModal()" style="width:100%; margin-top:15px; padding:10px;">閉じる</button>
+        <button class="btn-finish" style="background:#666;" onclick="toggleModal()">閉じる</button>
     </div>
 </div>
 
-<div id="feedback-area" style="display:none; background:white; padding:20px; margin-top:20px; border-radius:10px;">
-    <h2>試合分析結果</h2>
-    <div id="report-content"></div>
-    <button onclick="location.reload()" style="width:100%; padding:10px;">戻る</button>
-</div>
-
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwgrRe4wti0ZxSEqO8_zqASAYAYF2pPg3jzvo1MAczdpUg1kFWp61mL7vNVg7BoFZwjCg/exec";
+    // --- 設定 ---
+    const GAS_URL = "あなたのGASのデプロイURLをここに貼る";
 
-    // 選手マスタデータ（本人特定のIDを持つ）
+    // 選手データ（IDで個人を識別）
     let allPlayers = [
-        { id: 101, name: "山田", number: 1 }, { id: 102, name: "佐藤", number: 2 },
-        { id: 103, name: "田中", number: 3 }, { id: 104, name: "伊藤", number: 4 },
-        { id: 105, name: "渡辺", number: 5 }, { id: 106, name: "中村", number: 6 },
-        { id: 107, name: "リベロ高橋", number: 12 }, { id: 108, name: "鈴木", number: 7 }
+        { id: 101, name: "山田", number: 1 },
+        { id: 102, name: "佐藤", number: 2 },
+        { id: 103, name: "田中", number: 3 },
+        { id: 104, name: "伊藤", number: 4 },
+        { id: 105, name: "渡辺", number: 5 },
+        { id: 106, name: "中村", number: 6 },
+        { id: 107, name: "高橋(L)", number: 12 },
+        { id: 108, name: "鈴木", number: 7 }
     ];
 
-    // コート上のポジション配置（現在誰がどの位置にいるか）
+    // コート初期配置（1〜6番ポジション）
     let courtPosition = [
         allPlayers[3], allPlayers[2], allPlayers[1], // 前衛: 左(4), 中(3), 右(2)
         allPlayers[4], allPlayers[5], allPlayers[0]  // 後衛: 左(5), 中(6), 右(1)
@@ -113,6 +199,7 @@
     let swapSourceIndex = null;
     let stats = [];
 
+    // --- メイン描画 ---
     function renderCourt() {
         const court = document.getElementById('court');
         court.innerHTML = '';
@@ -120,75 +207,112 @@
             const card = document.createElement('div');
             card.className = `player-card ${swapSourceIndex === index ? 'active-swap' : ''}`;
             card.innerHTML = `
-                <div class="swap-icon" onclick="startSwap(${index})">🔄</div>
+                <div class="swap-icon" onclick="handleSwap(${index})">🔄</div>
                 <div class="player-info">
                     <span class="player-num">${player.number}</span>
                     <span class="player-name">${player.name}</span>
                 </div>
                 <div class="action-grid">
-                    <button class="btn-ace" onclick="record(${player.id}, '${player.name}', '◎')">◎</button>
-                    <button class="btn-eff" onclick="record(${player.id}, '${player.name}', '〇')">〇</button>
-                    <button class="btn-std" onclick="record(${player.id}, '${player.name}', '△')">△</button>
-                    <button class="btn-err" onclick="record(${player.id}, '${player.name}', '×')">×</button>
+                    <button class="btn-ace" onclick="record(${player.id}, '${player.name}', '◎', ${index})">◎</button>
+                    <button class="btn-eff" onclick="record(${player.id}, '${player.name}', '〇', ${index})">〇</button>
+                    <button class="btn-std" onclick="record(${player.id}, '${player.name}', '△', ${index})">△</button>
+                    <button class="btn-err" onclick="record(${player.id}, '${player.name}', '×', ${index})">×</button>
                 </div>
             `;
             court.appendChild(card);
         });
     }
 
-    function startSwap(index) {
+    // --- 交代ロジック ---
+    function handleSwap(index) {
         if (swapSourceIndex === null) {
             swapSourceIndex = index;
+            renderCourt();
         } else {
             const temp = courtPosition[swapSourceIndex];
             courtPosition[swapSourceIndex] = courtPosition[index];
             courtPosition[index] = temp;
             swapSourceIndex = null;
+            renderCourt();
         }
-        renderCourt();
     }
 
-    async function record(playerId, playerName, eval) {
+    // --- 記録ロジック (Fetch API) ---
+    async function record(id, name, evaluation, posIndex) {
         const data = {
-            playerId: playerId, // 選手本人を特定するID
-            playerName: playerName,
-            eval: eval,
-            pos: courtPosition.findIndex(p => p.id === playerId) + 1,
-            time: new Date().toLocaleString()
+            playerId: id,
+            playerName: name,
+            eval: evaluation,
+            pos: posIndex + 1, // 1~6のポジション
+            time: new Date().toLocaleTimeString()
         };
         stats.push(data);
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).catch(e => console.error(e));
+
+        // GASへ非同期送信
+        try {
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors", // GASの仕様上no-corsが必要な場合がある
+                body: JSON.stringify(data)
+            });
+        } catch (e) { console.error("送信エラー", e); }
+    }
+
+    // --- フィードバック表示 ---
+    function showFeedback() {
+        if (!confirm("試合を終了して分析結果を表示しますか？")) return;
+
+        document.getElementById('main-screen').style.display = 'none';
+        const feedbackScreen = document.getElementById('feedback-screen');
+        feedbackScreen.style.display = 'block';
+
+        const report = document.getElementById('report-body');
+        
+        // ローテ別失点集計
+        const rotErrors = {};
+        stats.filter(s => s.eval === '×').forEach(s => {
+            const rotName = "P" + s.pos;
+            rotErrors[rotName] = (rotErrors[rotName] || 0) + 1;
+        });
+        const worstRot = Object.keys(rotErrors).reduce((a, b) => rotErrors[a] > rotErrors[b] ? a : b, "なし");
+
+        // 選手別トップスコアラー
+        const playerCounts = {};
+        stats.filter(s => s.eval === '◎').forEach(s => {
+            playerCounts[s.playerName] = (playerCounts[s.playerName] || 0) + 1;
+        });
+        const mvp = Object.keys(playerCounts).reduce((a, b) => playerCounts[a] > playerCounts[b] ? a : b, "未算出");
+
+        report.innerHTML = `
+            <div class="stat-row"><span>総記録数</span><span>${stats.length} 件</span></div>
+            <div class="stat-row"><span>本日のMVP (◎最多)</span><span>${mvp} 選手</span></div>
+            <div class="stat-row"><span>失点最多ポジション</span><span>${worstRot}</span></div>
+            <p style="margin-top:20px; font-size:0.9em; color:#666;">
+                ※詳細なローテーション分析と全データは、接続されたスプレッドシートにリアルタイムで保存されています。
+            </p>
+        `;
     }
 
     function toggleModal() {
-        const modal = document.getElementById('member-modal');
+        const modal = document.getElementById('modal-overlay');
         modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
-        renderMemberList();
+        if(modal.style.display === 'flex') renderMemberList();
     }
 
     function renderMemberList() {
         const list = document.getElementById('member-list');
         list.innerHTML = '';
         allPlayers.forEach(p => {
-            const item = document.createElement('div');
-            item.className = 'member-list-item';
-            item.innerHTML = `<span>#${p.number} ${p.name}</span>`;
-            list.appendChild(item);
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `<span>#${p.number} ${p.name}</span> <small>待機中</small>`;
+            list.appendChild(div);
         });
     }
 
-    function finishGame() {
-        if(!confirm("試合を終了し、個人の活躍を分析しますか？")) return;
-        document.getElementById('court').parentElement.style.display = 'none';
-        document.getElementById('feedback-area').style.display = 'block';
-        
-        // 簡易フィードバックロジック
-        const report = document.getElementById('report-content');
-        // ここでplayerIdごとにstatsをフィルタリングして、各選手の決定率などを計算して表示
-        report.innerHTML = "<p>データ集計中...（スプレッドシートの各選手行へ紐付け完了）</p>";
-    }
-
+    // 初期起動
     renderCourt();
 </script>
+
 </body>
 </html>
