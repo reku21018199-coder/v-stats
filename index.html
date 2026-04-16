@@ -3,186 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V-Stats Pro Analyzer</title>
+    <title>V-Stats Pro v3.0 | Court & Rotation Analyzer</title>
     <style>
         :root {
-            --court-green: #1b5e20;
-            --card-bg: #1e1e1e;
-            --text-color: #ffffff;
-            --accent-blue: #2196f3;
-            --gold: #d4af37;
-            --red: #f44336;
-            --green: #4caf50;
-            --orange: #ff9800;
+            --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
+            --gold: #d4af37; --green: #4caf50; --orange: #ff9800; --red: #f44336; --blue: #2196f3;
         }
-        body { font-family: sans-serif; background: #121212; color: var(--text-color); margin: 0; padding: 5px; overflow: hidden; }
+        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 5px; overflow: hidden; font-size: 11px; }
         
-        /* ヘッダー */
-        header { display: flex; gap: 10px; align-items: center; padding: 5px 10px; background: #222; border-bottom: 1px solid #444; height: 40px; }
+        /* ヘッダー・操作系 */
+        header { display: flex; gap: 8px; align-items: center; padding: 5px 10px; background: #222; border-bottom: 1px solid #444; height: 40px; }
         .match-input { flex: 1; background: #333; border: 1px solid #555; color: #fff; padding: 5px; border-radius: 4px; }
-        .btn { padding: 5px 15px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
-
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; font-size: 11px; }
+        
         /* メインレイアウト */
-        .main-container { display: flex; gap: 10px; height: calc(100vh - 65px); margin-top: 5px; }
+        .container { display: flex; gap: 8px; height: calc(100vh - 60px); }
+        .court-area { flex: 4; display: flex; flex-direction: column; gap: 5px; }
+        .sidebar { flex: 1.2; background: #222; padding: 8px; border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 
-        /* コートエリア (2x3) */
+        /* コート(2x3) */
         .court-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 5px; background: var(--court-green); padding: 8px; border-radius: 8px; flex: 4;
+            gap: 5px; background: var(--court-green); padding: 10px; border-radius: 8px; flex-grow: 1; border: 2px solid #fff;
         }
-
-        /* サイドバー (控え選手) */
-        .bench-sidebar { flex: 1; background: #222; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
 
         /* 選手カード */
-        .player-card {
-            background: var(--card-bg); border-radius: 4px; padding: 4px; display: flex; flex-direction: column;
-            border: 2px solid transparent; font-size: 11px; position: relative;
-        }
-        .active-swap { border-color: var(--accent-blue); background: #0d47a1; }
-
-        .player-header { display: flex; align-items: center; gap: 3px; border-bottom: 1px solid #444; padding-bottom: 2px; }
-        .player-header input { background: transparent; border: none; color: #fff; font-size: 11px; font-weight: bold; }
-        .swap-icon { cursor: pointer; color: var(--accent-blue); font-size: 14px; }
-
-        .stat-line { display: flex; justify-content: space-between; font-size: 10px; margin: 2px 0; color: #aaa; }
-        .val { color: #fff; font-weight: bold; }
-
-        /* ボタンセクション */
-        .section-label { font-size: 9px; color: #888; text-align: center; margin-top: 2px; border-top: 1px solid #333; }
-        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 1px; }
-        .btn-row.two-col { grid-template-columns: 1fr 1fr; }
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 4px; border: 2px solid transparent; }
+        .active-swap { border-color: var(--blue); background: #0d47a1; }
+        .player-header { display: flex; align-items: center; gap: 2px; border-bottom: 1px solid #444; padding-bottom: 2px; }
+        .player-header input { background: transparent; border: none; color: #fff; font-weight: bold; width: 45px; }
         
-        .action-btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; font-weight: bold; padding: 4px 0; cursor: pointer; }
-        .ex { background: var(--gold); } .ok { background: var(--green); } .bad { background: var(--orange); } .miss { background: var(--red); }
-        .blue { background: var(--accent-blue); }
+        /* スタッツ表示 */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 9px; margin: 3px 0; color: #ccc; }
+        .stat-grid b { color: #fff; }
 
-        /* フィードバック画面 */
-        #feedback-overlay {
+        /* ボタン群 */
+        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 3px; }
+        .action-btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; font-weight: bold; padding: 5px 0; cursor: pointer; opacity: 0.9; }
+        .action-btn:hover { opacity: 1; transform: scale(1.05); }
+
+        /* ローテーション管理 */
+        .rotation-ctrl { background: #333; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* フィードバック */
+        #feedback-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000; padding: 40px; overflow-y: auto;
+            background: rgba(0,0,0,0.9); z-index: 1000; padding: 20px; overflow-y: auto;
         }
-        .report-card { background: #222; padding: 20px; border-radius: 12px; max-width: 800px; margin: 0 auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #444; padding: 8px; text-align: center; font-size: 12px; }
-        th { background: #333; }
+        .report { background: #222; padding: 20px; border-radius: 10px; max-width: 900px; margin: 0 auto; }
+        .mvp-box { background: #333; border-left: 4px solid var(--gold); padding: 10px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #444; padding: 6px; text-align: center; }
     </style>
 </head>
 <body>
 
 <header>
     <input type="text" id="matchName" class="match-input" placeholder="試合名を入力">
+    <div class="rotation-ctrl">
+        <span>ローテ: <b>S<span id="rot-num">1</span></b></span>
+        <button class="btn" style="background:var(--blue); margin-left:10px;" onclick="rotate()">回る(P+)</button>
+    </div>
     <button class="btn" style="background:#555;" onclick="undo()">戻る</button>
-    <button class="btn" style="background:#2e7d32;" onclick="downloadCSV()">CSV出力</button>
-    <button class="btn" style="background:#c62828;" onclick="showFeedback()">試合終了・分析</button>
+    <button class="btn" style="background:var(--gold);" onclick="showFeedback()">試合終了・分析反映</button>
 </header>
 
-<div class="main-container">
-    <div class="court-grid" id="court"></div>
-    <div class="bench-sidebar">
-        <div style="font-size:12px; color:#aaa; margin-bottom:5px;">控え選手</div>
+<div class="container">
+    <div class="court-area">
+        <div class="court-grid" id="court"></div>
+    </div>
+    <div class="sidebar">
+        <div style="font-weight:bold; border-bottom:1px solid #555;">控え・リベロ</div>
         <div id="bench"></div>
     </div>
 </div>
 
-<div id="feedback-overlay">
-    <div class="report-card">
-        <h2>試合終了レポート</h2>
-        <div id="report-content"></div>
-        <button class="btn" style="background:#444; margin-top:20px;" onclick="document.getElementById('feedback-overlay').style.display='none'">分析を閉じる</button>
+<div id="feedback-modal">
+    <div class="report">
+        <h2 style="color:var(--gold);">Game Analysis Report</h2>
+        <div id="mvp-section"></div>
+        <div id="rotation-report"></div>
+        <div id="table-section"></div>
+        <button class="btn" style="background:#444; margin-top:15px; width:100%;" onclick="document.getElementById('feedback-modal').style.display='none'">記録に戻る</button>
     </div>
 </div>
 
 <script>
-    const GAS_URL = "YOUR_GAS_URL_HERE";
-
-    // 選手データ（12名分用意、スタッツは選手個人に紐付け）
+    const GAS_URL = "YOUR_GAS_URL";
+    
+    // 選手データ（個人スタッツ）
     let players = Array.from({length: 12}, (_, i) => ({
-        id: i,
-        no: i + 1,
-        name: `選手${i + 1}`,
-        spike: {ex:0, ok:0, bad:0, miss:0},
-        serve: {ex:0, ok:0, bad:0, miss:0},
-        reception: {a:0, b:0, c:0, miss:0},
-        block: {ex:0, ok:0},
-        dig: {ex:0, ok:0, bad:0, miss:0},
-        loss: 0
+        id: i, no: i+1, name: `選手${i+1}`,
+        spike: {ex:0, ok:0, bad:0, miss:0}, serve: {ex:0, ok:0, bad:0, miss:0},
+        rec: {a:0, b:0, c:0, miss:0}, dig: {ex:0, ok:0, bad:0, miss:0},
+        block: {ex:0, ok:0, bad:0, miss:0}, loss: 0
     }));
 
-    // コート配置（インデックス）と控え配置
-    let courtIds = [3, 2, 1, 4, 5, 0]; // 0-5が最初に出場
+    let courtIds = [3, 2, 1, 4, 5, 0]; // S1の状態
     let benchIds = [6, 7, 8, 9, 10, 11];
+    let rotPos = 1;
     let history = [];
+    let rotStats = Array.from({length: 7}, () => ({plus: 0, minus: 0}));
     let swapTarget = null;
 
-    // 効果率算出 (JVA基準)
-    const calcSpikeEff = (s) => {
-        const tot = s.ex + s.ok + s.bad + s.miss;
-        return tot > 0 ? (((s.ex - s.miss) / tot) * 100).toFixed(1) : "0.0";
+    // 計算ロジック
+    const getEff = (s) => {
+        const t = s.ex + s.ok + s.bad + s.miss;
+        return t > 0 ? ((s.ex - s.miss) / t * 100).toFixed(1) : "0.0";
     };
-    const calcServeEff = (s) => {
-        const tot = s.ex + s.ok + s.bad + s.miss;
-        return tot > 0 ? (((s.ex * 100 + s.ok * 25) / tot)).toFixed(1) : "0.0";
-    };
-    const calcRecEff = (r) => {
-        const tot = r.a + r.b + r.c + r.miss;
-        return tot > 0 ? (((r.a * 100 + r.b * 50) / tot)).toFixed(1) : "0.0";
+    const getRecRate = (r) => {
+        const t = r.a + r.b + r.c + r.miss;
+        return t > 0 ? ((r.a * 100 + r.b * 50) / t).toFixed(1) : "0.0";
     };
 
     function render() {
         renderArea('court', courtIds);
         renderArea('bench', benchIds);
+        document.getElementById('rot-num').innerText = rotPos;
     }
 
-    function renderArea(elementId, idList) {
-        const container = document.getElementById(elementId);
+    function renderArea(divId, idList) {
+        const container = document.getElementById(divId);
         container.innerHTML = '';
-        idList.forEach((id, posIdx) => {
+        idList.forEach(id => {
             const p = players[id];
             const card = document.createElement('div');
-            card.className = `player-card ${swapTarget && swapTarget.id === id ? 'active-swap' : ''}`;
+            card.className = `player-card ${swapTarget === id ? 'active-swap' : ''}`;
             card.innerHTML = `
                 <div class="player-header">
-                    <span class="swap-icon" onclick="selectSwap(${id}, '${elementId}')">🔄</span>
-                    <input type="text" value="${p.no}" onchange="updateP(${id},'no',this.value)" style="width:15px">
-                    <input type="text" value="${p.name}" onchange="updateP(${id},'name',this.value)">
+                    <span style="cursor:pointer" onclick="selectSwap(${id})">🔄</span>
+                    <input type="text" value="${p.no}" onchange="p.no=this.value" style="width:15px">
+                    <input type="text" value="${p.name}" onchange="p.name=this.value">
                 </div>
-                <div class="stat-line">
-                    <span>得:<span class="val">${p.spike.ex + p.serve.ex + p.block.ex}</span></span>
-                    <span>失:<span class="val">${p.loss}</span></span>
-                    <span>SP率:<span class="val">${calcSpikeEff(p.spike)}%</span></span>
+                <div class="stat-grid">
+                    <span>SP率:<b>${getEff(p.spike)}%</b></span>
+                    <span>SV率:<b>${getEff(p.serve)}%</b></span>
+                    <span>受率:<b>${getRecRate(p.rec)}%</b></span>
+                    <span>得失:<b>${p.spike.ex+p.serve.ex+p.block.ex}-${p.loss}</b></span>
                 </div>
-                
-                <div class="section-label">SPIKE</div>
                 <div class="btn-row">
-                    <button class="action-btn ex" onclick="record(${id},'spike','ex')">◎</button>
-                    <button class="action-btn ok" onclick="record(${id},'spike','ok')">○</button>
-                    <button class="action-btn bad" onclick="record(${id},'spike','bad')">△</button>
-                    <button class="action-btn miss" onclick="record(${id},'spike','miss')">×</button>
+                    <button class="action-btn ex" onclick="record(${id},'spike','ex')">S◎</button>
+                    <button class="action-btn ok" onclick="record(${id},'spike','ok')">S○</button>
+                    <button class="action-btn bad" onclick="record(${id},'spike','bad')">S△</button>
+                    <button class="action-btn miss" onclick="record(${id},'spike','miss')">S×</button>
                 </div>
-
-                <div class="section-label">SERVE</div>
                 <div class="btn-row">
-                    <button class="action-btn ex" onclick="record(${id},'serve','ex')">◎</button>
-                    <button class="action-btn ok" onclick="record(${id},'serve','ok')">○</button>
-                    <button class="action-btn bad" onclick="record(${id},'serve','bad')">△</button>
-                    <button class="action-btn miss" onclick="record(${id},'serve','miss')">×</button>
+                    <button class="action-btn ex" onclick="record(${id},'serve','ex')">V◎</button>
+                    <button class="action-btn ok" onclick="record(${id},'serve','ok')">V○</button>
+                    <button class="action-btn bad" onclick="record(${id},'serve','bad')">V△</button>
+                    <button class="action-btn miss" onclick="record(${id},'serve','miss')">V×</button>
                 </div>
-
-                <div class="section-label">RECEPTION</div>
                 <div class="btn-row">
-                    <button class="action-btn ex" onclick="record(${id},'reception','a')">A</button>
-                    <button class="action-btn ok" onclick="record(${id},'reception','b')">B</button>
-                    <button class="action-btn blue" onclick="record(${id},'reception','c')">C</button>
-                    <button class="action-btn miss" onclick="record(${id},'reception','miss')">×</button>
+                    <button class="action-btn ex" onclick="record(${id},'rec','a')">R A</button>
+                    <button class="action-btn ok" onclick="record(${id},'rec','b')">R B</button>
+                    <button class="action-btn blue" onclick="record(${id},'rec','c')">R C</button>
+                    <button class="action-btn miss" onclick="record(${id},'rec','miss')">R ×</button>
                 </div>
-
-                <div class="section-label">BLOCK / DIG</div>
                 <div class="btn-row">
-                    <button class="action-btn ex" title="Block OK" onclick="record(${id},'block','ex')">B◎</button>
-                    <button class="action-btn ok" title="Block OneTouch" onclick="record(${id},'block','ok')">B○</button>
-                    <button class="action-btn ok" onclick="record(${id},'dig','ex')">D◎</button>
-                    <button class="action-btn bad" onclick="record(${id},'dig','miss')">D×</button>
+                    <button class="action-btn ex" onclick="record(${id},'block','ex')">B◎</button>
+                    <button class="action-btn ok" onclick="record(${id},'block','ok')">B○</button>
+                    <button class="action-btn ex" onclick="record(${id},'dig','ex')">D◎</button>
+                    <button class="action-btn miss" onclick="record(${id},'dig','miss')">D×</button>
                 </div>
             `;
             container.appendChild(card);
@@ -191,61 +172,77 @@
 
     function record(pid, cat, type) {
         players[pid][cat][type]++;
-        let isLoss = (type === 'miss' && cat !== 'dig'); // Digのミスは失点に加算しない等の調整可
-        if (isLoss) players[pid].loss++;
-        history.push({pid, cat, type, isLoss});
+        let isPlus = (type === 'ex' && cat !== 'dig');
+        let isMinus = (type === 'miss');
+        
+        if (isPlus) rotStats[rotPos].plus++;
+        if (isMinus) { players[pid].loss++; rotStats[rotPos].minus++; }
+        
+        history.push({pid, cat, type, isPlus, isMinus, rot: rotPos});
         render();
-        saveToGas();
+        saveGas();
     }
 
-    function selectSwap(id, area) {
-        if (!swapTarget) {
-            swapTarget = {id, area};
-        } else {
-            const idx1 = courtIds.indexOf(swapTarget.id);
-            const idx2 = courtIds.indexOf(id);
-            const bIdx1 = benchIds.indexOf(swapTarget.id);
-            const bIdx2 = benchIds.indexOf(id);
-
-            // 配置の入れ替えロジック
-            if (idx1 !== -1) courtIds[idx1] = id; else benchIds[bIdx1] = id;
-            if (idx2 !== -1) courtIds[idx2] = swapTarget.id; else benchIds[bIdx2] = swapTarget.id;
-
-            swapTarget = null;
-        }
+    function rotate() {
+        // ローテーション移動 [P4, P3, P2, P5, P6, P1] -> 時計回り
+        const p = courtIds;
+        courtIds = [p[1], p[2], p[5], p[0], p[3], p[4]];
+        rotPos = rotPos === 6 ? 1 : rotPos + 1;
         render();
+    }
+
+    function selectSwap(id) {
+        if (swapTarget === null) { swapTarget = id; render(); }
+        else {
+            let aIdx = courtIds.indexOf(swapTarget); if(aIdx===-1) aIdx = benchIds.indexOf(swapTarget) + 100;
+            let bIdx = courtIds.indexOf(id); if(bIdx===-1) bIdx = benchIds.indexOf(id) + 100;
+            
+            if(aIdx < 100) courtIds[aIdx] = id; else benchIds[aIdx-100] = id;
+            if(bIdx < 100) courtIds[bIdx] = swapTarget; else benchIds[bIdx-100] = swapTarget;
+            
+            swapTarget = null; render();
+        }
     }
 
     function showFeedback() {
-        const overlay = document.getElementById('feedback-overlay');
-        const content = document.getElementById('report-content');
-        overlay.style.display = 'block';
+        const modal = document.getElementById('feedback-modal');
+        modal.style.display = 'block';
 
-        let html = `<table><tr><th>背番号</th><th>名前</th><th>総得点</th><th>総失点</th><th>スパイク効果率</th><th>サーブ効果率</th><th>受球成功率</th></tr>`;
-        players.forEach(p => {
-            const score = p.spike.ex + p.serve.ex + p.block.ex;
-            html += `<tr><td>${p.no}</td><td>${p.name}</td><td>${score}</td><td>${p.loss}</td><td>${calcSpikeEff(p.spike)}%</td><td>${calcServeEff(p.serve)}%</td><td>${calcRecEff(p.reception)}%</td></tr>`;
+        // 分析ロジック
+        const bestSpiker = [...players].sort((a,b) => getEff(b.spike) - getEff(a.spike))[0];
+        const bestServer = [...players].sort((a,b) => getEff(b.serve) - getEff(a.serve))[0];
+        const bestRec = [...players].sort((a,b) => getRecRate(b.rec) - getRecRate(a.rec))[0];
+        const bestRot = [...rotStats].map((s,i)=>({i, val:s.plus-s.minus})).sort((a,b)=>b.val-a.val)[0];
+
+        document.getElementById('mvp-section').innerHTML = `
+            <div class="mvp-box">
+                <b>🏆 項目別トップ貢献者</b><br>
+                🔥 スパイク決定率1位: ${bestSpiker.name} (${getEff(bestSpiker.spike)}%)<br>
+                ⚡ サーブ効果率1位: ${bestServer.name} (${getEff(bestServer.serve)}%)<br>
+                🛡️ レセプション成功率1位: ${bestRec.name} (${getRecRate(bestRec.rec)}%)
+            </div>
+        `;
+        
+        let rotHtml = "<b>📊 ローテーション分析</b><br>";
+        rotStats.forEach((s, i) => { if(i===0)return;
+            rotHtml += `S${i}: <span style="color:var(--green)">+${s.plus}</span> / <span style="color:var(--red)">-${s.minus}</span> (Diff: ${s.plus-s.minus}) | `;
         });
-        html += `</table>`;
-        content.innerHTML = html;
-    }
-
-    async function saveToGas() {
-        const match = document.getElementById('matchName').value;
-        const payload = { match, players, timestamp: new Date().toLocaleString() };
-        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        document.getElementById('rotation-report').innerHTML = `<div class="mvp-box">${rotHtml}</div>`;
     }
 
     function undo() {
         if (history.length === 0) return;
         const last = history.pop();
         players[last.pid][last.cat][last.type]--;
-        if (last.isLoss) players[last.pid].loss--;
+        if (last.isPlus) rotStats[last.rot].plus--;
+        if (last.isMinus) { players[last.pid].loss--; rotStats[last.rot].minus--; }
         render();
     }
 
-    function updateP(id, key, val) { players[id][key] = val; }
-    function downloadCSV() { /* CSV出力処理 */ }
+    async function saveGas() {
+        const payload = { match: document.getElementById('matchName').value, players, rotStats };
+        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+    }
 
     render();
 </script>
