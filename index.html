@@ -2,187 +2,241 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V-Stats Analyzer Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>V-Stats Court Analyzer</title>
     <style>
         :root {
             --court-green: #2e7d32;
-            --player-bg: #ffffff;
-            --accent-blue: #007bff;
+            --player-bg: #222;
+            --accent-blue: #2196f3;
+            --plus-gold: #d4af37;
+            --minus-red: #f44336;
         }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; overflow-x: hidden; }
         
         /* ヘッダー */
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 15px; background: #333; color: white; border-radius: 8px; margin-bottom: 10px;
-        }
-        .menu-btn { background: #555; border: none; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .header { position: sticky; top: 0; background: #222; padding: 10px; z-index: 100; border-bottom: 1px solid #444; display: flex; gap: 8px; align-items: center; }
+        .match-input { flex: 2; background: #333; border: 1px solid #555; color: #fff; padding: 8px; border-radius: 4px; font-size: 14px; }
+        .btn-header { padding: 8px 12px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; }
 
-        /* コート配置（3列×2行） */
-        .court {
+        /* コートレイアウト */
+        .court-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(2, 1fr);
-            gap: 10px;
+            gap: 8px;
             background: var(--court-green);
-            padding: 12px;
-            border: 4px solid white;
-            border-radius: 12px;
-            min-height: 500px; /* 空白にならないよう高さを確保 */
+            padding: 10px;
+            margin: 10px;
+            border: 3px solid #fff;
+            border-radius: 8px;
+            aspect-ratio: 3 / 4;
         }
 
         /* 選手カード */
         .player-card {
             background: var(--player-bg);
-            border-radius: 8px;
-            padding: 10px;
+            border-radius: 6px;
+            padding: 4px;
             display: flex;
             flex-direction: column;
+            border: 2px solid transparent;
             position: relative;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border: 3px solid transparent;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .active-swap { border-color: var(--accent-blue); background: #e3f2fd; }
+        .active-swap { border-color: var(--accent-blue); background: #1a237e; }
 
-        .player-header { display: flex; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .player-num { background: #333; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 8px; }
-        .player-name { font-weight: bold; font-size: 16px; flex-grow: 1; }
+        .player-info { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; border-bottom: 1px solid #444; padding-bottom: 2px; }
+        .player-info input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 100%; }
+        .swap-btn { color: var(--accent-blue); font-size: 16px; cursor: pointer; }
 
-        /* 交代マーク */
-        .swap-icon { font-size: 20px; cursor: pointer; color: var(--accent-blue); padding: 2px; }
-
-        /* 記録ボタンエリア（ここが空白だった部分） */
-        .action-container { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; justify-content: center; }
-        .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        /* スタッツ表示エリア */
+        .stat-summary { font-size: 10px; display: flex; justify-content: space-around; margin-bottom: 4px; }
         
-        button.record-btn {
-            border: none; padding: 12px 0; border-radius: 6px; color: white; 
-            font-weight: bold; font-size: 14px; cursor: pointer; transition: opacity 0.2s;
+        /* ボタン群 */
+        .action-label { font-size: 9px; color: #aaa; text-align: center; margin-top: 2px; background: #333; }
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+        .btn-grid button { 
+            padding: 6px 0; border: none; border-radius: 2px; color: #fff; font-size: 11px; font-weight: bold; cursor: pointer;
         }
-        button.record-btn:active { opacity: 0.7; }
-        .btn-ace { background: #28a745; }
-        .btn-eff { background: #ffc107; color: #333; }
-        .btn-std { background: #6c757d; }
-        .btn-err { background: #dc3545; }
+        .ex { background: #d4af37; } .ok { background: #4caf50; } 
+        .bad { background: #ff9800; } .miss { background: #f44336; }
+        .blue { background: #2196f3; }
 
-        /* モーダル */
-        #modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal-body { background: white; padding: 20px; border-radius: 12px; width: 85%; max-height: 70vh; overflow-y: auto; }
-
-        .btn-finish { width: 100%; margin-top: 20px; padding: 15px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        /* ローディング */
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
-<header>
-    <span>V-Stats Analyzer</span>
-    <button class="menu-btn" onclick="toggleModal()">選手名簿</button>
-</header>
+<div id="loading">通信中...</div>
 
-<div class="court" id="court">
-    </div>
-
-<button class="btn-finish" onclick="finishGame()">試合終了・データ分析</button>
-
-<div id="modal">
-    <div class="modal-body">
-        <h3>登録メンバー</h3>
-        <div id="member-list"></div>
-        <button class="btn-finish" onclick="toggleModal()" style="background:#888;">閉じる</button>
-    </div>
+<div class="header">
+    <input type="text" id="matchName" class="match-input" placeholder="試合名" onblur="save()">
+    <button onclick="undo()" class="btn-header" style="background:#555;">戻る</button>
+    <button onclick="downloadCSV()" class="btn-header" style="background:#2e7d32;">CSV</button>
+    <button onclick="confirmReset()" class="btn-header" style="background:#c62828;">消去</button>
 </div>
 
+<div class="court-container" id="court">
+    </div>
+
 <script>
-    const GAS_URL = "あなたのGASのURL"; // 必ず貼り替えてください
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwFwZOdpAHnC0GQGGg_Z7QDumuWRBQIT4dF7lqjt4uUkNKw5TA2l6fyBZ3dakWHNlwQ/exec";
 
-    // 選手データ
-    let allPlayers = [
-        { id: 1, name: "伊藤", number: 4 },
-        { id: 2, name: "田中", number: 3 },
-        { id: 3, name: "佐藤", number: 2 },
-        { id: 4, name: "渡辺", number: 5 },
-        { id: 5, name: "中村", number: 6 },
-        { id: 6, name: "山田", number: 1 },
-        { id: 7, name: "高橋(L)", number: 12 }
-    ];
+let data = {
+    match_name: "",
+    players: [], // 6人固定
+    history: []
+};
 
-    // 初期配置
-    let courtPosition = [
-        allPlayers[0], allPlayers[1], allPlayers[2], // 前衛
-        allPlayers[3], allPlayers[4], allPlayers[5]  // 後衛
-    ];
-
-    let swapIdx = null;
-    let stats = [];
-
-    function render() {
-        const container = document.getElementById('court');
-        container.innerHTML = '';
-
-        courtPosition.forEach((p, i) => {
-            const card = document.createElement('div');
-            card.className = `player-card ${swapIdx === i ? 'active-swap' : ''}`;
-            card.innerHTML = `
-                <div class="player-header">
-                    <div class="player-num">${p.number}</div>
-                    <div class="player-name">${p.name}</div>
-                    <div class="swap-icon" onclick="handleSwap(${i})">🔄</div>
-                </div>
-                <div class="action-container">
-                    <div class="action-row">
-                        <button class="record-btn btn-ace" onclick="record(${p.id},'◎')">◎</button>
-                        <button class="record-btn btn-eff" onclick="record(${p.id},'〇')">〇</button>
-                    </div>
-                    <div class="action-row">
-                        <button class="record-btn btn-std" onclick="record(${p.id},'△')">△</button>
-                        <button class="record-btn btn-err" onclick="record(${p.id},'×')">×</button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
+// 選手初期化
+function initPlayers() {
+    data.players = [];
+    for (let i = 0; i < 6; i++) {
+        data.players.push({
+            id: i, no: (i+1), name: "選手"+(i+1),
+            spike: {ex:0, ok:0, bad:0, miss:0},
+            serve: {ex:0, ok:0, bad:0, miss:0},
+            reception: {a:0, b:0, c:0, miss:0},
+            loss: 0
         });
     }
+}
 
-    function handleSwap(i) {
-        if (swapIdx === null) {
-            swapIdx = i;
-        } else {
-            const temp = courtPosition[swapIdx];
-            courtPosition[swapIdx] = courtPosition[i];
-            courtPosition[i] = temp;
-            swapIdx = null;
-        }
-        render();
-    }
+let swapIdx = null;
 
-    function record(pid, val) {
-        const p = allPlayers.find(x => x.id === pid);
-        const data = { id: pid, name: p.name, eval: val, time: new Date().toLocaleTimeString() };
-        stats.push(data);
-        console.log("記録:", data);
-        
-        // GAS送信（非同期）
-        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-    }
+function render() {
+    const court = document.getElementById('court');
+    court.innerHTML = '';
+    
+    data.players.forEach((p, idx) => {
+        // 簡易スタッツ計算
+        const s_tot = Object.values(p.spike).reduce((a,b)=>a+b,0);
+        const s_rate = s_tot > 0 ? ((p.spike.ex / s_tot)*100).toFixed(0) : 0;
+        const score = p.spike.ex + p.serve.ex;
 
-    function toggleModal() {
-        const m = document.getElementById('modal');
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-        const list = document.getElementById('member-list');
-        list.innerHTML = allPlayers.map(p => `<p>#${p.number} ${p.name}</p>`).join('');
-    }
+        const card = document.createElement('div');
+        card.className = `player-card ${swapIdx === idx ? 'active-swap' : ''}`;
+        card.innerHTML = `
+            <div class="player-info">
+                <span class="swap-btn" onclick="handleSwap(${idx})">🔄</span>
+                <input type="text" value="${p.no}" onchange="updateInfo(${idx},'no',this.value)" style="width:20px">
+                <input type="text" value="${p.name}" onchange="updateInfo(${idx},'name',this.value)">
+            </div>
+            <div class="stat-summary">
+                <span>得:<b class="ex">${score}</b></span>
+                <span>失:<b class="miss">${p.loss}</b></span>
+                <span>率:<b>${s_rate}%</b></span>
+            </div>
+            
+            <div class="action-label">SPIKE</div>
+            <div class="btn-grid">
+                <button class="ex" onclick="action(${idx},'spike','ex')">◎</button>
+                <button class="ok" onclick="action(${idx},'spike','ok')">○</button>
+                <button class="bad" onclick="action(${idx},'spike','bad')">△</button>
+                <button class="miss" onclick="action(${idx},'spike','miss')">×</button>
+            </div>
+            
+            <div class="action-label">SERVE</div>
+            <div class="btn-grid">
+                <button class="ex" onclick="action(${idx},'serve','ex')">◎</button>
+                <button class="ok" onclick="action(${idx},'serve','ok')">○</button>
+                <button class="bad" onclick="action(${idx},'serve','bad')">△</button>
+                <button class="miss" onclick="action(${idx},'serve','miss')">×</button>
+            </div>
 
-    function finishGame() {
-        alert("集計完了。スプレッドシートを確認してください。");
-        console.table(stats);
-    }
+            <div class="action-label">RECEIVE</div>
+            <div class="btn-grid">
+                <button class="ex" onclick="action(${idx},'reception','a')">A</button>
+                <button class="ok" onclick="action(${idx},'reception','b')">B</button>
+                <button class="blue" onclick="action(${idx},'reception','c')">C</button>
+                <button class="miss" onclick="action(${idx},'reception','miss')">×</button>
+            </div>
+        `;
+        court.appendChild(card);
+    });
+}
 
-    // 起動
+// 記録アクション
+async function action(idx, cat, type) {
+    data.players[idx][cat][type]++;
+    let isLoss = (type === 'miss');
+    if (isLoss) data.players[idx].loss++;
+    
+    data.history.push({idx, cat, type, auto_loss: isLoss});
     render();
+    save();
+}
+
+// 選手交代
+function handleSwap(idx) {
+    if (swapIdx === null) {
+        swapIdx = idx;
+    } else {
+        const temp = data.players[swapIdx];
+        data.players[swapIdx] = data.players[idx];
+        data.players[idx] = temp;
+        swapIdx = null;
+        save();
+    }
+    render();
+}
+
+// 通信処理 (Web 2.0 / Fetch API)
+async function save() {
+    document.getElementById('loading').style.display = 'flex';
+    data.match_name = document.getElementById('matchName').value;
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(data)
+        });
+    } catch (e) { console.error("Save Error", e); }
+    document.getElementById('loading').style.display = 'none';
+}
+
+async function load() {
+    document.getElementById('loading').style.display = 'flex';
+    try {
+        const res = await fetch(GAS_URL);
+        const json = await res.json();
+        if (json.players) data = json;
+        else initPlayers();
+    } catch (e) { initPlayers(); }
+    document.getElementById('matchName').value = data.match_name || "";
+    render();
+    document.getElementById('loading').style.display = 'none';
+}
+
+function undo() {
+    if (data.history.length === 0) return;
+    const last = data.history.pop();
+    data.players[last.idx][last.cat][last.type]--;
+    if (last.auto_loss) data.players[last.idx].loss--;
+    render();
+    save();
+}
+
+function updateInfo(idx, field, val) { data.players[idx][field] = val; save(); }
+function confirmReset() { if(confirm('全データ消去？')) { initPlayers(); render(); save(); } }
+
+function downloadCSV() {
+    let csv = "\uFEFF背番号,名前,得点,失点,スパイク決定率\n";
+    data.players.forEach(p => {
+        const s_tot = Object.values(p.spike).reduce((a,b)=>a+b,0);
+        const s_rate = s_tot > 0 ? ((p.spike.ex / s_tot)*100).toFixed(1) : 0;
+        csv += `${p.no},${p.name},${p.spike.ex+p.serve.ex},${p.loss},${s_rate}%\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "vstats.csv";
+    a.click();
+}
+
+window.onload = load;
 </script>
 </body>
 </html>
