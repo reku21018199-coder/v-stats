@@ -3,53 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v10.0 | UI Perfect Fit</title>
+    <title>V-Stats Pro v10.1 | Ultimate Responsive</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
             --gold: #d4af37; --green: #4caf50; --orange: #ff9800; --red: #f44336; --blue: #2196f3;
             --neon-blue: #00e5ff;
         }
-        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100vh; }
-        .main-container { display: flex; height: 100vh; padding: 4px; gap: 4px; box-sizing: border-box; }
+        /* 100dvhでスマホのブラウザバーの長さを正確に計算し、はみ出しを防ぐ */
+        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw; }
+        .main-container { display: flex; flex-direction: row; height: 100%; padding: 4px; gap: 4px; box-sizing: border-box; }
         
-        /* 💡究極の修正： max-content を使い、中身がはみ出すことをシステムレベルで禁止する */
         .court-section { 
-            flex: 8; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; 
+            flex: 1; /* flex: 8 から変更し、残りの幅をすべて取るように */
+            min-width: 0; min-height: 0; /* スクロールを確実に効かせる魔法のコード */
+            background: var(--court-green); border-radius: 4px; border: 2px solid #fff; 
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            /* minmax(max-content, 1fr) ＝ 中身の分だけ絶対に枠を広げ、余ったスペースは均等に分ける */
             grid-template-rows: repeat(2, minmax(max-content, 1fr));
-            gap: 6px; padding: 6px; box-sizing: border-box; overflow-y: auto; 
+            gap: 6px; padding: 6px; box-sizing: border-box; 
+            overflow-y: auto; /* スクロール復活 */
         }
         
-        .control-section { flex: 2; display: flex; flex-direction: column; gap: 4px; min-width: 160px; height: 100%; overflow: hidden; }
-        .action-panel { flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+        /* 操作パネルの幅を固定し、画面外に押し出されるのを防ぐ */
+        .control-section { 
+            flex: 0 0 170px; /* PCでは幅170px固定 */
+            display: flex; flex-direction: column; gap: 4px; height: 100%; 
+            min-height: 0; overflow-y: auto;
+        }
+        .action-panel { flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
         
         #bench-list { display: none; background: #222; border: 1px solid #444; max-height: 200px; overflow-y: auto; border-radius: 4px; }
         .bench-item { padding: 10px; border-bottom: 1px solid #333; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
         .score-box { background: #000; border: 1px solid #555; border-radius: 6px; padding: 4px; text-align: center; }
         .score-display { font-size: 32px; font-weight: bold; color: var(--gold); line-height: 1.2; }
         .score-ctrl { display: flex; justify-content: space-around; gap: 2px; }
-        .small-btn { flex: 1; height: 35px; background: #444; border: none; color: #fff; border-radius: 4px; font-size: 14px; cursor: pointer; }
+        .small-btn { flex: 1; height: 35px; background: #444; border: none; color: #fff; border-radius: 4px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .rot-info { background: #0d47a1; border-radius: 4px; padding: 6px; text-align: center; font-weight: bold; font-size: 18px; color: var(--neon-blue); }
-        #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; }
+        
+        #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; min-height: 60px;}
+        #action-buttons { display: flex; gap: 4px; height: 35px; transition: all 0.3s ease; }
 
-        /* 💡修正2：カードの下部パディング（内側の余白）を増やし、数字が枠のギリギリにならないよう保護 */
-        .player-card { 
-            background: var(--card-bg); border-radius: 4px; 
-            padding: 6px 6px 10px 6px; /* 下側の余白を10pxに拡張 */
-            display: flex; flex-direction: column; gap: 4px; 
-            border: 2px solid transparent; box-sizing: border-box; 
-        }
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 6px 6px 10px 6px; display: flex; flex-direction: column; gap: 4px; border: 2px solid transparent; box-sizing: border-box; }
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 4px; }
         .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 35%; padding: 0; }
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px var(--blue); }
 
-        .stat-item { 
-            flex: 1 0 auto; 
-            display: flex; flex-direction: column; justify-content: center; 
-            gap: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; 
-        }
+        .stat-item { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; }
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; }
         .rate-txt { font-size: 10px; color: #aaa; }
@@ -58,10 +57,16 @@
         .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 5px 0; font-weight: bold; cursor: pointer; }
         .num-row { text-align: center; font-size: 14px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; margin-top: 2px;}
         
-        #sync-status { text-align: center; font-size: 10px; color: #888; margin-top: 2px; }
+        #sync-status { text-align: center; font-size: 10px; color: #888; margin-top: 2px; flex: none; }
         .online { color: var(--green) !important; font-weight: bold; }
 
-        @media screen and (max-width: 600px) { .court-section { grid-template-columns: 1fr; grid-template-rows: auto; } }
+        /* 📱 スマホ用レイアウト：縦並びに変更し、上が操作パネル、下がコート */
+        @media screen and (max-width: 650px) { 
+            .main-container { flex-direction: column; }
+            .control-section { flex: none; width: 100%; height: auto; max-height: 35%; border-bottom: 2px solid var(--blue); padding-bottom: 4px; }
+            .court-section { grid-template-columns: 1fr; grid-template-rows: auto; }
+            #action-buttons { height: 40px; } /* スマホではボタンを少し高く */
+        }
     </style>
 </head>
 <body>
@@ -70,7 +75,7 @@
     <div class="court-section" id="court"></div>
     <div class="control-section">
         <div class="action-panel">
-            <button style="background:var(--blue); height:40px; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="toggleBench()">控え・交代 ▼</button>
+            <button style="background:var(--blue); height:40px; flex:none; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="toggleBench()">控え・交代 ▼</button>
             <div id="bench-list"></div>
             <div class="score-box">
                 <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
@@ -80,17 +85,19 @@
                 </div>
             </div>
             <div class="rot-info">S<span id="current-rot">1</span></div>
+            
             <div id="live-analysis"></div>
-            <div style="display: flex; gap: 4px;">
+            <div id="action-buttons">
                 <button class="small-btn" onclick="undo()">戻る</button>
                 <button class="small-btn" style="background:var(--red);" onclick="finishGame()">消去</button>
             </div>
+            
             <div id="sync-status">● 準備中...</div>
         </div>
     </div>
 </div>
 
-   <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -108,9 +115,20 @@
     const db = getDatabase(app);
     const gameRef = ref(db, 'vstats/live_game');
 
-    // 💡 URLから「role（役割）」を取得する
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
+    
+    // 💡 役割ごとのUI最適化（分析枠を消し、ボタンを巨大化）
+    const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
+    if (isSpecialRole) {
+        document.getElementById('live-analysis').style.display = 'none';
+        const actionBtns = document.getElementById('action-buttons');
+        actionBtns.style.flex = '1'; // 余ったスペースをすべて埋める
+        actionBtns.querySelectorAll('button').forEach(btn => {
+            btn.style.height = '100%';     // 高さを最大まで伸ばす
+            btn.style.fontSize = '18px';   // 文字も大きくして押しやすく
+        });
+    }
 
     const defaultData = {
         players: Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} })),
@@ -124,9 +142,10 @@
         players = data.players; courtIds = data.courtIds; score = data.score;
         currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats;
         
-        document.getElementById('sync-status').innerText = '● リアルタイム同期中 (' + (myRole ? myRole : 'all') + ')';
+        document.getElementById('sync-status').innerText = '● 同期中 (' + (myRole ? myRole : 'all') + ')';
         document.getElementById('sync-status').className = 'online';
-        render(); updateAnalysis();
+        render(); 
+        if(!isSpecialRole) updateAnalysis(); // 分析画面がある時だけ計算する
     });
 
     function save() { set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats }); }
@@ -139,17 +158,12 @@
             const card = document.createElement('div');
             card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`;
             
-            // 💡 役割に応じて、追加するHTML（スタッツ行）を変える
             let rowsHTML = '';
-            
-            // roleが指定されていない（全体）、または 'attack' の場合は攻撃項目を表示
             if (!myRole || myRole === 'attack') {
                 rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']);
                 rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']);
             }
-            
-            // roleが指定されていない（全体）、または 'defense' の場合は守備項目を表示
-            if (!myRole || myRole === 'defense') {
+            if (!myRole || myRole === 'defense' || myRole === 'defence') {
                 rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']);
                 rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']);
                 rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']);
