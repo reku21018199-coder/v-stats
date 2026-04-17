@@ -90,7 +90,7 @@
     </div>
 </div>
 
-<script type="module">
+   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -108,6 +108,10 @@
     const db = getDatabase(app);
     const gameRef = ref(db, 'vstats/live_game');
 
+    // 💡 URLから「role（役割）」を取得する
+    const params = new URLSearchParams(window.location.search);
+    const myRole = params.get('role');
+
     const defaultData = {
         players: Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} })),
         courtIds: [0,1,2,3,4,5], score: {us:0, them:0}, currentRot: 1, serveRights: 'us', rotStats: Array.from({length: 7}, () => ({plus:0, minus:0}))
@@ -120,7 +124,7 @@
         players = data.players; courtIds = data.courtIds; score = data.score;
         currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats;
         
-        document.getElementById('sync-status').innerText = '● リアルタイム同期中';
+        document.getElementById('sync-status').innerText = '● リアルタイム同期中 (' + (myRole ? myRole : 'all') + ')';
         document.getElementById('sync-status').className = 'online';
         render(); updateAnalysis();
     });
@@ -134,17 +138,30 @@
             const p = players[courtIds[idx]];
             const card = document.createElement('div');
             card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`;
+            
+            // 💡 役割に応じて、追加するHTML（スタッツ行）を変える
+            let rowsHTML = '';
+            
+            // roleが指定されていない（全体）、または 'attack' の場合は攻撃項目を表示
+            if (!myRole || myRole === 'attack') {
+                rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']);
+                rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']);
+            }
+            
+            // roleが指定されていない（全体）、または 'defense' の場合は守備項目を表示
+            if (!myRole || myRole === 'defense') {
+                rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']);
+                rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']);
+                rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']);
+            }
+
             card.innerHTML = `
                 <div class="player-header">
                     <input type="text" value="${p.no}" id="no-${p.id}">
                     <input type="text" value="${p.name}" id="name-${p.id}">
                     <span style="cursor:pointer;font-size:11px;color:var(--neon-blue);font-weight:bold;" onclick="handleSwap(${p.id})">🔄交代</span>
                 </div>
-                ${createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×'])}
-                ${createRow(p.id, 'REC', 'rec', ['A','B','C','×'])}
-                ${createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×'])}
-                ${createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×'])}
-                ${createRow(p.id, 'DIG', 'dig', ['◎','○','△','×'])}
+                ${rowsHTML}
             `;
             court.appendChild(card);
             
