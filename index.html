@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v7.4</title>
+    <title>V-Stats Pro v7.5</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -14,48 +14,62 @@
         
         .main-container { display: flex; height: 100vh; padding: 4px; gap: 4px; box-sizing: border-box; }
         
-        /* 左側：選手カードエリア */
-        .court-section { flex: 7.5; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; padding: 4px; overflow: hidden; }
+        /* 選手エリア：上下スクロール可能に */
+        .court-section { 
+            flex: 8; 
+            background: var(--court-green); 
+            border-radius: 4px; 
+            border: 2px solid #fff; 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            grid-template-rows: auto auto; /* 上下2段 */
+            gap: 6px; 
+            padding: 6px; 
+            overflow-y: auto; /* 上下スクロール */
+            scroll-snap-type: y proximity;
+        }
         
-        /* 右側：操作セクション */
-        .control-section { flex: 2.5; display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
+        /* 右側：操作パネル */
+        .control-section { flex: 2; display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
 
-        /* ベンチ：大きなボタンをスクロール */
-        .bench-container { flex: 0 0 220px; background: #222; border-radius: 4px; padding: 4px; display: flex; flex-direction: column; }
-        .bench-list { flex: 1; overflow-y: auto; padding-right: 2px; }
-        .bench-item { background: #444; padding: 12px 8px; margin-bottom: 5px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; border: 2px solid transparent; text-align: center; }
-        .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; }
-
-        /* 操作パネル */
-        .action-panel { flex: 1; background: #1a1a1a; border-radius: 4px; border: 1px solid #444; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
-        .score-box { background: #000; border: 1px solid #555; border-radius: 4px; padding: 4px; text-align: center; }
-        .score-display { font-size: 34px; font-weight: bold; color: var(--gold); }
-        .score-ctrl { display: flex; justify-content: space-around; margin-top: 2px; }
-        .small-btn { flex: 1; margin: 0 2px; height: 35px; background: #444; border: none; color: #fff; border-radius: 3px; font-size: 14px; cursor: pointer; }
-
-        .rot-info { background: #0d47a1; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 20px; color: var(--neon-blue); }
+        .action-panel { flex: 1; background: #1a1a1a; border-radius: 4px; border: 1px solid #444; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
         
-        #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 11px; padding: 6px; color: var(--neon-blue); overflow-y: auto; line-height: 1.4; }
+        .score-box { background: #000; border: 1px solid #555; border-radius: 6px; padding: 8px 4px; text-align: center; }
+        .score-display { font-size: 38px; font-weight: bold; color: var(--gold); line-height: 1; margin-bottom: 8px; }
+        .score-ctrl { display: flex; justify-content: space-around; gap: 4px; }
+        .small-btn { flex: 1; height: 40px; background: #444; border: none; color: #fff; border-radius: 4px; font-size: 16px; cursor: pointer; }
 
-        .cmd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .cmd-btn { height: 35px; border: none; border-radius: 3px; color: #fff; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .rot-info { background: #0d47a1; border-radius: 4px; padding: 8px; text-align: center; font-weight: bold; font-size: 22px; color: var(--neon-blue); }
+        
+        #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 11px; padding: 8px; color: var(--neon-blue); overflow-y: auto; }
+
+        .cmd-btns { display: flex; flex-direction: column; gap: 4px; }
+        .cmd-btn { height: 44px; border: none; border-radius: 4px; color: #fff; font-size: 13px; font-weight: bold; cursor: pointer; }
+
+        /* モーダル（控え選手） */
+        #bench-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box;
+        }
+        .bench-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
 
         /* 選手カード */
-        .player-card { background: var(--card-bg); border-radius: 3px; padding: 3px; display: flex; flex-direction: column; justify-content: space-between; border: 1.5px solid transparent; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; }
-        .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 40%; }
-        .swap-trigger { cursor: pointer; font-size: 14px; padding: 0 4px; }
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 5px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; min-height: 280px; scroll-snap-align: start; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 4px; margin-bottom: 4px; }
+        .player-header input { background: #333; border: none; color: #fff; font-size: 13px; font-weight: bold; width: 40%; padding: 2px 4px; border-radius: 2px; }
+        .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; }
 
-        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; padding: 1px 0; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; padding: 2px 0; }
         .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; }
-        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 1px 0; }
-        .btn { border: none; border-radius: 1px; color: #fff; font-size: 11px; padding: 5px 0; font-weight: bold; cursor: pointer; }
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 3px 0; }
+        .btn { border: none; border-radius: 2px; color: #fff; font-size: 12px; padding: 8px 0; font-weight: bold; cursor: pointer; }
         
-        .num-row { display: flex; justify-content: space-around; font-size: 14px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); }
-        .rate-txt { font-size: 10px; color: #aaa; text-align: right; }
+        .num-row { display: flex; justify-content: space-around; font-size: 16px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 4px var(--blue); }
+        .rate-txt { font-size: 11px; color: #aaa; }
 
-        @media screen and (max-width: 700px) {
-            .court-section { width: 900px; grid-template-columns: repeat(3, 300px); overflow-x: auto; }
+        /* モバイル横向き等の調整 */
+        @media screen and (max-width: 600px) {
+            .court-section { grid-template-columns: 1fr; } /* スマホ縦なら1列 */
         }
     </style>
 </head>
@@ -65,12 +79,9 @@
     <div class="court-section" id="court"></div>
 
     <div class="control-section">
-        <div class="bench-container">
-            <span style="font-size:10px; color:#888; margin-bottom:4px;">選手交代 (スクロール)</span>
-            <div class="bench-list" id="bench"></div>
-        </div>
-
         <div class="action-panel">
+            <button class="cmd-btn" style="background:var(--blue);" onclick="toggleBench()">控え・交代</button>
+            
             <div class="score-box">
                 <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
                 <div class="score-ctrl">
@@ -78,18 +89,28 @@
                     <button class="small-btn" onclick="modifyScore('them', 1)">相+</button>
                 </div>
             </div>
-            <div class="rot-info">ローテ: S<span id="current-rot">1</span></div>
-            <div id="live-analysis">分析待機中...</div>
+
+            <div class="rot-info">S<span id="current-rot">1</span></div>
+            
+            <div id="live-analysis">分析中...</div>
+
             <div class="cmd-btns">
                 <button class="cmd-btn" style="background:#444;" onclick="undo()">戻る</button>
-                <button class="cmd-btn" style="background:var(--red);" onclick="finishGame()">終了</button>
+                <button class="cmd-btn" style="background:var(--red);" onclick="finishGame()">リセット</button>
             </div>
         </div>
     </div>
 </div>
 
+<div id="bench-modal">
+    <h2 style="color:var(--gold); margin:0;">控え選手リスト</h2>
+    <p style="font-size:12px;">交代したい選手を選んでください</p>
+    <div class="bench-grid" id="bench-list"></div>
+    <button class="cmd-btn" style="width:100%; margin-top:20px; background:#444;" onclick="toggleBench()">閉じる</button>
+</div>
+
 <script>
-    const STORAGE_KEY = 'vstats_v7_4';
+    const STORAGE_KEY = 'vstats_v7_5';
     let players = JSON.parse(localStorage.getItem(STORAGE_KEY))?.players || Array.from({length: 15}, (_, i) => ({
         id: i, no: i+1, name: `選手${i+1}`,
         spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0},
@@ -111,6 +132,7 @@
     function render() {
         const court = document.getElementById('court');
         court.innerHTML = '';
+        // 前衛(P4,3,2) 後衛(P5,6,1) の順
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const id = courtIds[idx];
             const p = players[id];
@@ -120,7 +142,7 @@
                 <div class="player-header">
                     <input type="text" value="${p.no}" onchange="updateInfo(${id},'no',this.value)">
                     <input type="text" value="${p.name}" onchange="updateInfo(${id},'name',this.value)">
-                    <span class="swap-trigger" onclick="handleSwap(${id})">🔄</span>
+                    <span style="cursor:pointer;" onclick="startSwap(${id})">🔄交代</span>
                 </div>
                 ${createRow(id, 'SPIKE', 'spike', ['◎','○','△','×'])}
                 ${createRow(id, 'REC', 'rec', ['A','B','C','×'])}
@@ -131,15 +153,16 @@
             court.appendChild(card);
         });
 
-        const bench = document.getElementById('bench');
-        bench.innerHTML = '';
+        const blist = document.getElementById('bench-list');
+        blist.innerHTML = '';
         players.forEach(p => {
             if(!courtIds.includes(p.id)) {
                 const item = document.createElement('div');
                 item.className = `bench-item ${swapTargetId === p.id ? 'selected-swap' : ''}`;
+                item.style = "background:#333; padding:15px; border-radius:8px; text-align:center; cursor:pointer; font-weight:bold;";
                 item.innerHTML = `#${p.no} ${p.name}`;
-                item.onclick = () => handleSwap(p.id);
-                bench.appendChild(item);
+                item.onclick = () => execSwap(p.id);
+                blist.appendChild(item);
             }
         });
         document.getElementById('score-us').innerText = score.us;
@@ -165,14 +188,20 @@
         save(); render();
     }
 
-    function handleSwap(id) {
-        if(swapTargetId === null) { swapTargetId = id; }
-        else {
-            const idxA = courtIds.indexOf(swapTargetId); const idxB = courtIds.indexOf(id);
-            if(idxA !== -1) courtIds[idxA] = id; if(idxB !== -1) courtIds[idxB] = swapTargetId;
+    function toggleBench() { 
+        const m = document.getElementById('bench-modal');
+        m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function startSwap(id) { swapTargetId = id; toggleBench(); render(); }
+    
+    function execSwap(id) {
+        if(swapTargetId !== null) {
+            const idx = courtIds.indexOf(swapTargetId);
+            if(idx !== -1) courtIds[idx] = id;
             swapTargetId = null;
         }
-        save(); render();
+        toggleBench(); save(); render();
     }
 
     function updateInfo(id, field, val) { players[id][field] = val; save(); }
@@ -191,13 +220,12 @@
 
     function updateAnalysis() {
         const ana = document.getElementById('live-analysis');
-        let text = "<b>【分析レポート】</b><br>";
         const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d);
-        text += `最高得点R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>`;
-        text += `最弱失点R: S${sortedRot[5].i} (${sortedRot[5].d})<br>`;
         const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0];
-        if(bestSpiker.spike.ex > 0) text += `最多得点者: #${bestSpiker.no} ${bestSpiker.name}`;
-        ana.innerHTML = text;
+        ana.innerHTML = `<b>【分析】</b><br>
+            最高R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>
+            最弱R: S${sortedRot[5].i} (${sortedRot[5].d})<br>
+            最多得点: #${bestSpiker.no} ${bestSpiker.name}`;
     }
 
     function undo() {
@@ -213,7 +241,7 @@
         save(); render();
     }
 
-    function finishGame() { if(confirm("全データをリセットしますか？")) { localStorage.clear(); location.reload(); } }
+    function finishGame() { if(confirm("データを全消去しますか？")) { localStorage.clear(); location.reload(); } }
     const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
     window.onload = () => { render(); updateAnalysis(); };
