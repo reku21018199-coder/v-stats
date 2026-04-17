@@ -3,61 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v7.1</title>
+    <title>V-Stats Pro v7.2</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
             --gold: #d4af37; --green: #4caf50; --orange: #ff9800; --red: #f44336; --blue: #2196f3;
             --neon-blue: #00e5ff;
+            /* 動的な高さ計算用の変数 */
+            --header-height: 0px;
+            --footer-height: 100px;
+            --main-height: calc(100vh - var(--footer-height));
         }
-        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; font-size: 11px; touch-action: manipulation; }
+        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; touch-action: manipulation; }
         
-        /* メインコンテナ */
-        .container { display: flex; height: calc(100vh - 95px); padding: 2px; gap: 4px; }
+        /* メインレイアウト */
+        .container { display: flex; height: var(--main-height); padding: 4px; gap: 6px; box-sizing: border-box; }
         
-        /* コートエリア：横スクロール対応 */
-        .court-wrapper { flex: 7; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; background: #000; border-radius: 4px; }
+        /* コート：PC/タブレットでは画面内に収め、スマホでは横スクロール */
+        .court-wrapper { flex: 7.5; overflow: hidden; background: #000; border-radius: 6px; border: 2px solid #fff; position: relative; }
+        
         .court-area { 
             display: grid; 
-            grid-template-columns: repeat(3, 300px); /* 1枚の横幅を固定 */
+            grid-template-columns: repeat(3, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            gap: 5px; 
+            gap: 4px; 
             background: var(--court-green); 
-            padding: 8px; 
-            width: 900px; /* 前衛3人+後衛3人の幅を確保 */
+            padding: 6px; 
             height: 100%;
+            width: 100%;
             box-sizing: border-box;
-            border: 3px solid #fff;
         }
 
-        .sidebar { flex: 2.5; background: #222; padding: 5px; border-radius: 4px; display: flex; flex-direction: column; min-width: 120px; }
-        .bench-list { flex: 1; overflow-y: auto; }
-        
-        /* フィードバックエリア：直近履歴＋分析 */
-        #live-feedback { height: 140px; background: #000; border: 1px solid #444; border-radius: 4px; padding: 5px; font-size: 10px; color: var(--neon-blue); overflow-y: auto; margin-top: 5px; border-left: 3px solid var(--blue); }
-        .history-log { color: #888; border-bottom: 1px solid #333; margin-bottom: 3px; font-size: 9px; }
+        /* サイドバー */
+        .sidebar { flex: 2.5; background: #222; padding: 8px; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; min-width: 150px; }
+        .bench-list { flex: 1; overflow-y: auto; margin-bottom: 8px; }
+        #live-feedback { flex: 0 0 160px; background: #000; border: 1px solid #444; border-radius: 4px; padding: 8px; font-size: 11px; color: var(--neon-blue); overflow-y: auto; border-left: 4px solid var(--blue); }
 
-        .player-card { background: var(--card-bg); border-radius: 4px; padding: 3px; display: flex; flex-direction: column; border: 2px solid transparent; scroll-snap-align: start; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 22px; }
-        .player-header input { background: transparent; border: none; color: #fff; font-size: 11px; width: 45%; font-weight: bold; }
+        /* 選手カード：高さを内訳項目に合わせて圧縮 */
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 4px; display: flex; flex-direction: column; border: 2px solid transparent; overflow: hidden; justify-content: space-between; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 10%; min-height: 20px; margin-bottom: 2px; }
+        .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; width: 42%; font-weight: bold; }
         
-        .item-group { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; }
-        .item-label { font-size: 9px; color: var(--gold); font-weight: bold; }
+        /* スタッツ項目：5項目を縦に等分 */
+        .item-group { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; min-height: 0; padding: 1px 0; }
+        .item-group:last-child { border-bottom: none; }
+        .item-label { font-size: 10px; color: var(--gold); font-weight: bold; line-height: 1; }
         
-        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px 0; }
+        .btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 2px 0; }
         .action-btn { border: none; border-radius: 2px; color: #fff; font-size: 12px; padding: 6px 0; cursor: pointer; font-weight: bold; }
         
-        .stat-line { display: flex; justify-content: space-around; font-size: 11px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 5px var(--blue); margin: 2px 0; }
-        .eff-val { font-size: 10px; text-align: center; font-weight: bold; color: #fff; }
+        .stat-line { display: flex; justify-content: space-around; font-size: 12px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 5px var(--blue); }
+        .eff-val { font-size: 10px; text-align: center; color: #fff; line-height: 1; }
 
-        .bench-item { background: #333; padding: 8px; margin-bottom: 4px; border-radius: 3px; cursor: pointer; border: 2px solid transparent; }
-        .selected-player { border-color: var(--blue) !important; background: #0d47a1 !important; box-shadow: 0 0 10px var(--blue); }
+        /* ベンチ */
+        .bench-item { background: #333; padding: 10px; margin-bottom: 6px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+        .selected-player { border-color: var(--blue) !important; background: #0d47a1 !important; }
 
-        footer { position: fixed; bottom: 0; width: 100%; height: 95px; background: #1a1a1a; border-top: 2px solid #444; display: flex; align-items: center; padding: 0 10px; gap: 8px; box-sizing: border-box; z-index: 1000; }
-        .score-board { display: flex; align-items: center; gap: 5px; background: #000; padding: 5px 10px; border-radius: 6px; border: 1px solid #555; }
-        .score-num { font-size: 38px; font-weight: bold; color: var(--gold); min-width: 50px; text-align: center; }
-        .score-label { font-size: 9px; color: #aaa; text-align: center; display: block; }
-        .score-btn { width: 42px; height: 42px; background: #444; border: none; color: #fff; font-size: 24px; cursor: pointer; border-radius: 4px; }
+        /* フッター */
+        footer { position: fixed; bottom: 0; width: 100%; height: var(--footer-height); background: #1a1a1a; border-top: 3px solid #444; display: flex; align-items: center; padding: 0 15px; gap: 12px; box-sizing: border-box; z-index: 1000; }
+        .score-board { display: flex; align-items: center; gap: 8px; background: #000; padding: 8px 15px; border-radius: 8px; border: 1px solid #555; }
+        .score-num { font-size: 44px; font-weight: bold; color: var(--gold); min-width: 60px; text-align: center; }
+        .score-btn { width: 50px; height: 50px; background: #444; border: none; color: #fff; font-size: 28px; cursor: pointer; border-radius: 6px; }
+
+        /* モバイル専用調整 */
+        @media screen and (max-width: 800px) {
+            .court-wrapper { overflow-x: auto; scroll-snap-type: x mandatory; }
+            .court-area { width: 900px; grid-template-columns: repeat(3, 300px); }
+            .player-card { scroll-snap-align: start; }
+        }
 
         #startup-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
@@ -66,15 +79,15 @@
 
 <div id="startup-modal">
     <h2 style="color:var(--gold);">初期目玉設定</h2>
-    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P4<input id="no-4" style="width:80%"><input id="name-4" style="width:80%"></div>
-        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P3<input id="no-3" style="width:80%"><input id="name-3" style="width:80%"></div>
-        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P2<input id="no-2" style="width:80%"><input id="name-2" style="width:80%"></div>
-        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P5<input id="no-5" style="width:80%"><input id="name-5" style="width:80%"></div>
-        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P6<input id="no-6" style="width:80%"><input id="name-6" style="width:80%"></div>
-        <div class="medama-slot" style="width:90px; height:60px; border:1px dashed #fff; padding:5px; text-align:center;">P1<input id="no-1" style="width:80%"><input id="name-1" style="width:80%"></div>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+        <div class="medama-slot" style="width:100px; height:70px; border:2px dashed #777; padding:8px; text-align:center;">P4<input id="no-4" style="width:90%"><input id="name-4" style="width:90%"></div>
+        <div class="medama-slot" style="width:100px; height:70px; border:2px dashed #777; padding:8px; text-align:center;">P3<input id="no-3" style="width:90%"><input id="name-3" style="width:90%"></div>
+        <div class="medama-slot" style="width:100px; height:70px; border:2px dashed #777; padding:8px; text-align:center;">P2<input id="no-2" style="width:90%"><input id="name-2" style="width:90%"></div>
+        <div class="medama-slot" style="width:100px; height:70px; border:2px dashed #777; padding:8px; text-align:center;">P5<input id="no-5" style="width:90%"><input id="name-5" style="width:90%"></div>
+        <div class="medama-slot" style="width:100px; height:70px; border:2px dashed #777; padding:8px; text-align:center;">P6<input id="no-6" style="width:90%"><input id="name-6" style="width:90%"></div>
+        <div class="medama-slot" style="width:100px; height:70px; border:2px dashed #777; padding:8px; text-align:center;">P1<input id="no-1" style="width:90%"><input id="name-1" style="width:90%"></div>
     </div>
-    <button class="score-btn" style="width:200px; margin-top:20px; background:var(--blue); font-size:16px;" onclick="initGame()">試合開始</button>
+    <button class="score-btn" style="width:240px; margin-top:25px; background:var(--blue); font-size:18px;" onclick="initGame()">試合開始</button>
 </div>
 
 <div class="container">
@@ -89,31 +102,30 @@
 
 <footer>
     <div class="score-board">
-        <div><span class="score-label">自チーム</span><button class="score-btn" onclick="modifyScore('us', 1)">+</button></div>
+        <div><span style="font-size:10px; color:#aaa; display:block; text-align:center;">自チーム</span><button class="score-btn" onclick="modifyScore('us', 1)">+</button></div>
         <span class="score-num" id="score-us">0</span>
-        <span style="font-size:20px;">-</span>
+        <span style="font-size:24px;">-</span>
         <span class="score-num" id="score-them">0</span>
-        <div><span class="score-label">相手</span><button class="score-btn" onclick="modifyScore('them', 1)">+</button></div>
-        <div style="margin-left:8px; border-left:1px solid #444; padding-left:8px;">
-            <span style="font-size:9px;">ROT</span><br>
-            <span style="font-size:24px; font-weight:bold; color:var(--blue);">S<span id="current-rot">1</span></span>
+        <div><span style="font-size:10px; color:#aaa; display:block; text-align:center;">相手</span><button class="score-btn" onclick="modifyScore('them', 1)">+</button></div>
+        <div style="margin-left:12px; border-left:1px solid #444; padding-left:12px;">
+            <span style="font-size:10px; color:var(--blue);">ROT</span><br>
+            <span style="font-size:28px; font-weight:bold; color:var(--blue);">S<span id="current-rot">1</span></span>
         </div>
     </div>
-    <div style="display:flex; flex-direction:column; gap:4px;">
-        <button class="score-btn" style="width:75px; font-size:13px; background:var(--gold);" onclick="finishGame()">終了</button>
-        <button class="score-btn" style="width:75px; font-size:11px; background:#444;" onclick="undo()">戻る</button>
+    <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+        <button class="score-btn" style="width:100%; height:45px; font-size:14px; background:var(--gold);" onclick="finishGame()">終了</button>
+        <button class="score-btn" style="width:100%; height:45px; font-size:14px; background:#444;" onclick="undo()">戻る</button>
     </div>
 </footer>
 
 <script>
-    const STORAGE_KEY = 'vstats_v7_1';
+    const STORAGE_KEY = 'vstats_v7_2';
     let players = Array.from({length: 15}, (_, i) => ({
         id: i, no: i+1, name: `選手${i+1}`,
         spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0},
         rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0},
         block:{ex:0,ok:0,bad:0,miss:0}
     }));
-
     let courtIds = [0,1,2,3,4,5]; 
     let score = {us: 0, them: 0};
     let currentRot = 1;
@@ -141,7 +153,6 @@
     function render() {
         const court = document.getElementById('court');
         court.innerHTML = '';
-        // 前衛(P4,3,2) 後衛(P5,6,1) の順にグリッド配置
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const id = courtIds[idx];
             const p = players[id];
@@ -163,7 +174,7 @@
         });
 
         const bench = document.getElementById('bench');
-        bench.innerHTML = '<div style="font-size:9px; color:#888;">ベンチ</div>';
+        bench.innerHTML = '<div style="font-size:10px; color:#888; margin-bottom:5px;">ベンチ</div>';
         players.forEach(p => {
             if(courtIds.includes(p.id)) return;
             const item = document.createElement('div');
@@ -235,11 +246,11 @@
 
     function updateFeedback() {
         const fb = document.getElementById('live-feedback');
-        let html = "【入力履歴】\n";
-        history.slice(-3).reverse().forEach(h => {
-            html += `<div class="history-log">${h.type==='stat' ? h.label : h.side + "点追加"}</div>`;
+        let html = "<b>【入力履歴】</b><br>";
+        history.slice(-2).reverse().forEach(h => {
+            html += `<div style="color:#888; font-size:10px;">${h.type==='stat' ? h.label : h.side + "点追加"}</div>`;
         });
-        html += "\n【分析】\n";
+        html += "<br><b>【分析】</b><br>";
         const worst = [...rotStats].map((s,i)=>({i,d:s.plus-s.minus})).slice(1).sort((a,b)=>a.d-b.d)[0];
         if(worst.d < 0) html += `S${worst.i}ローテ失点中(${worst.d})`;
         fb.innerHTML = html;
