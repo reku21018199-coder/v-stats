@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v9.7 | Live Sync</title>
+    <title>V-Stats Pro v9.8 | UI Optimized</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -13,10 +13,11 @@
         body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100vh; }
         .main-container { display: flex; height: 100vh; padding: 4px; gap: 4px; box-sizing: border-box; }
         
+        /* 修正：カード高さを280pxに広げ、余裕を持たせる */
         .court-section { 
             flex: 8; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; 
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            grid-template-rows: repeat(2, minmax(260px, 1fr));
+            grid-template-rows: repeat(2, minmax(280px, 1fr));
             gap: 4px; padding: 4px; box-sizing: border-box; overflow-y: auto; 
         }
         
@@ -32,17 +33,27 @@
         .rot-info { background: #0d47a1; border-radius: 4px; padding: 6px; text-align: center; font-weight: bold; font-size: 18px; color: var(--neon-blue); }
         #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; }
 
-        .player-card { background: var(--card-bg); border-radius: 4px; padding: 4px 6px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; box-sizing: border-box; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; }
+        .player-card { background: var(--card-bg); border-radius: 4px; padding: 4px 6px; display: flex; flex-direction: column; gap: 2px; border: 2px solid transparent; box-sizing: border-box; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; margin-bottom: 2px; }
         .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 35%; padding: 0; }
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px var(--blue); }
 
-        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; border-bottom: 1px solid #333; padding: 2px 0; min-height: 42px; }
+        /* 修正：絶対にかぶらないスタッツ行の設計 */
+        .stat-item { 
+            flex: 1; display: flex; flex-direction: column; justify-content: center; 
+            gap: 3px; /* 縦の隙間を強制 */
+            border-bottom: 1px solid #333; padding: 3px 0; min-height: 46px; 
+        }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; }
-        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
-        .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 4px 0; font-weight: bold; cursor: pointer; }
-        .num-row { display: flex; justify-content: space-around; font-size: 13px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); }
         .rate-txt { font-size: 10px; color: #aaa; }
+        
+        /* ボタンと数字の列を完全に一致させる */
+        .btn-grid, .num-row { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; 
+        }
+        .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 4px 0; font-weight: bold; cursor: pointer; }
+        .num-row { text-align: center; font-size: 13px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; }
         
         #sync-status { text-align: center; font-size: 10px; color: #888; margin-top: 2px; }
         .online { color: var(--green) !important; font-weight: bold; }
@@ -80,7 +91,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // --- 新しく作成したv-stats-dataのConfig ---
     const firebaseConfig = {
         apiKey: "AIzaSyA9f9fpeHTZrsumsz0hCdFEOw5iqVRszdI",
         authDomain: "v-stats-data.firebaseapp.com",
@@ -112,9 +122,7 @@
         render(); updateAnalysis();
     });
 
-    function save() {
-        set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats });
-    }
+    function save() { set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats }); }
 
     function render() {
         if(!players) return;
@@ -146,10 +154,19 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; document.getElementById('current-rot').innerText = currentRot;
     }
 
+    // UI修正：stat-header クラスを追加し、数字(num-row)の出力をボタン(btn-grid)と完全に同調させました
     function createRow(pid, label, cat, btns) {
         const s = players[pid][cat];
         const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
-        return `<div class="stat-item"><div style="display:flex;justify-content:space-between"><span class="stat-label">${label}</span><span style="font-size:10px;color:#aaa">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+        return `
+        <div class="stat-item">
+            <div class="stat-header">
+                <span class="stat-label">${label}</span>
+                <span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span>
+            </div>
+            <div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div>
+            <div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div>
+        </div>`;
     }
 
     window.record = (pid, cat, type) => {
