@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v7.3</title>
+    <title>V-Stats Pro v7.4</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -14,46 +14,46 @@
         
         .main-container { display: flex; height: 100vh; padding: 4px; gap: 4px; box-sizing: border-box; }
         
-        /* 左側：選手カードエリアを最大化 */
-        .court-section { flex: 8; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; padding: 4px; overflow: hidden; }
+        /* 左側：選手カードエリア */
+        .court-section { flex: 7.5; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; padding: 4px; overflow: hidden; }
         
-        /* 右側：ベンチと操作系を集約 */
-        .control-section { flex: 2; display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+        /* 右側：操作セクション */
+        .control-section { flex: 2.5; display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
 
-        /* ベンチ：3人分＋スクロール */
-        .bench-container { flex: 0 0 140px; background: #222; border-radius: 4px; padding: 4px; display: flex; flex-direction: column; }
-        .bench-list { flex: 1; overflow-y: auto; }
-        .bench-item { background: #333; padding: 6px; margin-bottom: 2px; border-radius: 2px; font-size: 11px; cursor: pointer; border: 1px solid transparent; }
+        /* ベンチ：大きなボタンをスクロール */
+        .bench-container { flex: 0 0 220px; background: #222; border-radius: 4px; padding: 4px; display: flex; flex-direction: column; }
+        .bench-list { flex: 1; overflow-y: auto; padding-right: 2px; }
+        .bench-item { background: #444; padding: 12px 8px; margin-bottom: 5px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; border: 2px solid transparent; text-align: center; }
+        .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; }
 
-        /* 操作パネル：スコア・ローテ・ボタンをここへ移動 */
+        /* 操作パネル */
         .action-panel { flex: 1; background: #1a1a1a; border-radius: 4px; border: 1px solid #444; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
-        
         .score-box { background: #000; border: 1px solid #555; border-radius: 4px; padding: 4px; text-align: center; }
-        .score-display { font-size: 32px; font-weight: bold; color: var(--gold); display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .score-display { font-size: 34px; font-weight: bold; color: var(--gold); }
         .score-ctrl { display: flex; justify-content: space-around; margin-top: 2px; }
-        .small-btn { flex: 1; margin: 0 2px; height: 30px; background: #444; border: none; color: #fff; border-radius: 3px; font-size: 18px; cursor: pointer; }
+        .small-btn { flex: 1; margin: 0 2px; height: 35px; background: #444; border: none; color: #fff; border-radius: 3px; font-size: 14px; cursor: pointer; }
 
-        .rot-info { background: #0d47a1; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 18px; color: var(--neon-blue); }
+        .rot-info { background: #0d47a1; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 20px; color: var(--neon-blue); }
         
-        .cmd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: auto; }
-        .cmd-btn { height: 35px; border: none; border-radius: 3px; color: #fff; font-size: 11px; font-weight: bold; cursor: pointer; }
+        #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 11px; padding: 6px; color: var(--neon-blue); overflow-y: auto; line-height: 1.4; }
 
-        /* 選手カード：高さを稼ぐため余白を極限まで削る */
-        .player-card { background: var(--card-bg); border-radius: 3px; padding: 3px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: 1.5px solid transparent; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 1px; }
-        .player-header span { font-size: 11px; font-weight: bold; }
+        .cmd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .cmd-btn { height: 35px; border: none; border-radius: 3px; color: #fff; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+        /* 選手カード */
+        .player-card { background: var(--card-bg); border-radius: 3px; padding: 3px; display: flex; flex-direction: column; justify-content: space-between; border: 1.5px solid transparent; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; }
+        .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 40%; }
+        .swap-trigger { cursor: pointer; font-size: 14px; padding: 0 4px; }
 
         .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; padding: 1px 0; }
-        .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; line-height: 1; }
+        .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; }
         .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 1px 0; }
-        .btn { border: none; border-radius: 1px; color: #fff; font-size: 10px; padding: 4px 0; font-weight: bold; cursor: pointer; }
+        .btn { border: none; border-radius: 1px; color: #fff; font-size: 11px; padding: 5px 0; font-weight: bold; cursor: pointer; }
         
-        .num-row { display: flex; justify-content: space-around; font-size: 13px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; }
-        .rate-txt { font-size: 9px; text-align: right; color: #aaa; margin-top: -2px; }
+        .num-row { display: flex; justify-content: space-around; font-size: 14px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); }
+        .rate-txt { font-size: 10px; color: #aaa; text-align: right; }
 
-        #live-feedback { flex: 0 0 80px; background: #000; border-top: 2px solid var(--blue); font-size: 9px; padding: 4px; color: var(--neon-blue); overflow-y: auto; }
-
-        /* スマホ用レスポンシブ：横スクロールを維持 */
         @media screen and (max-width: 700px) {
             .court-section { width: 900px; grid-template-columns: repeat(3, 300px); overflow-x: auto; }
         }
@@ -66,51 +66,46 @@
 
     <div class="control-section">
         <div class="bench-container">
-            <span style="font-size:9px; color:#888;">ベンチ (スクロール可)</span>
+            <span style="font-size:10px; color:#888; margin-bottom:4px;">選手交代 (スクロール)</span>
             <div class="bench-list" id="bench"></div>
         </div>
 
         <div class="action-panel">
             <div class="score-box">
-                <div class="score-display">
-                    <span id="score-us">0</span><span style="font-size:16px;">-</span><span id="score-them">0</span>
-                </div>
+                <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
                 <div class="score-ctrl">
                     <button class="small-btn" onclick="modifyScore('us', 1)">自+</button>
                     <button class="small-btn" onclick="modifyScore('them', 1)">相+</button>
                 </div>
             </div>
-
-            <div class="rot-info">S<span id="current-rot">1</span></div>
-            
-            <div id="live-feedback"></div>
-
+            <div class="rot-info">ローテ: S<span id="current-rot">1</span></div>
+            <div id="live-analysis">分析待機中...</div>
             <div class="cmd-btns">
                 <button class="cmd-btn" style="background:#444;" onclick="undo()">戻る</button>
-                <button class="cmd-btn" style="background:var(--gold);" onclick="finishGame()">終了</button>
+                <button class="cmd-btn" style="background:var(--red);" onclick="finishGame()">終了</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const STORAGE_KEY = 'vstats_v7_3';
-    let players = Array.from({length: 15}, (_, i) => ({
+    const STORAGE_KEY = 'vstats_v7_4';
+    let players = JSON.parse(localStorage.getItem(STORAGE_KEY))?.players || Array.from({length: 15}, (_, i) => ({
         id: i, no: i+1, name: `選手${i+1}`,
         spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0},
-        rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0},
-        block:{ex:0,ok:0,bad:0,miss:0}
+        rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0}
     }));
-    let courtIds = [0,1,2,3,4,5]; 
-    let score = {us: 0, them: 0};
-    let currentRot = 1;
+    let courtIds = JSON.parse(localStorage.getItem(STORAGE_KEY))?.courtIds || [0,1,2,3,4,5];
+    let score = JSON.parse(localStorage.getItem(STORAGE_KEY))?.score || {us: 0, them: 0};
+    let currentRot = JSON.parse(localStorage.getItem(STORAGE_KEY))?.currentRot || 1;
     let serveRights = 'us';
-    let rotStats = Array.from({length: 7}, () => ({plus:0, minus:0}));
+    let rotStats = JSON.parse(localStorage.getItem(STORAGE_KEY))?.rotStats || Array.from({length: 7}, () => ({plus:0, minus:0}));
     let history = [];
+    let swapTargetId = null;
 
     function save() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({players, courtIds, score, currentRot, serveRights, rotStats, history}));
-        updateFeedback();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({players, courtIds, score, currentRot, serveRights, rotStats}));
+        updateAnalysis();
     }
 
     function render() {
@@ -120,9 +115,13 @@
             const id = courtIds[idx];
             const p = players[id];
             const card = document.createElement('div');
-            card.className = 'player-card';
+            card.className = `player-card ${swapTargetId === id ? 'selected-swap' : ''}`;
             card.innerHTML = `
-                <div class="player-header"><span>#${p.no} ${p.name}</span><span onclick="swap(${id})">🔄</span></div>
+                <div class="player-header">
+                    <input type="text" value="${p.no}" onchange="updateInfo(${id},'no',this.value)">
+                    <input type="text" value="${p.name}" onchange="updateInfo(${id},'name',this.value)">
+                    <span class="swap-trigger" onclick="handleSwap(${id})">🔄</span>
+                </div>
                 ${createRow(id, 'SPIKE', 'spike', ['◎','○','△','×'])}
                 ${createRow(id, 'REC', 'rec', ['A','B','C','×'])}
                 ${createRow(id, 'SERVE', 'serve', ['◎','○','△','×'])}
@@ -137,13 +136,12 @@
         players.forEach(p => {
             if(!courtIds.includes(p.id)) {
                 const item = document.createElement('div');
-                item.className = 'bench-item';
+                item.className = `bench-item ${swapTargetId === p.id ? 'selected-swap' : ''}`;
                 item.innerHTML = `#${p.no} ${p.name}`;
-                item.onclick = () => swap(p.id);
+                item.onclick = () => handleSwap(p.id);
                 bench.appendChild(item);
             }
         });
-
         document.getElementById('score-us').innerText = score.us;
         document.getElementById('score-them').innerText = score.them;
         document.getElementById('current-rot').innerText = currentRot;
@@ -152,94 +150,73 @@
     function createRow(pid, label, cat, btns) {
         const s = players[pid][cat];
         const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
-        let eff = (cat==='rec') ? getRecRate(s) : getEff(s);
-        const cols = ['var(--gold)','var(--green)','var(--orange)','var(--red)'];
         return `
             <div class="stat-item">
-                <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                    <span class="stat-label">${label}</span>
-                    <span class="rate-txt">${eff}%</span>
-                </div>
-                <div class="btn-grid">
-                    ${btns.map((b,i)=>`<button class="btn" style="background:${cols[i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}
-                </div>
-                <div class="num-row">
-                    ${counts.map(c=>`<span>${c}</span>`).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    function modifyScore(side, val) {
-        let rotated = false;
-        let prevServeRights = serveRights;
-        if(side === 'us' && val > 0 && serveRights === 'them') { rotate(); serveRights = 'us'; rotated = true; }
-        else if (side === 'them' && val > 0) { serveRights = 'them'; }
-        score[side] += val;
-        if(val > 0) { if(side === 'us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; }
-        history.push({type: 'score', side, val, rotated, prevServeRights});
-        save(); render();
-    }
-
-    function rotate() {
-        const p = courtIds;
-        courtIds = [p[1], p[2], p[3], p[4], p[5], p[0]];
-        currentRot = currentRot === 6 ? 1 : currentRot + 1;
+                <div style="display:flex; justify-content:space-between;"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div>
+                <div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div>
+                <div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div>
+            </div>`;
     }
 
     function record(pid, cat, type) {
         const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type;
         players[pid][cat][key]++;
-        history.push({type: 'stat', pid, cat, key, label: players[pid].name + " " + cat});
+        history.push({type:'stat', pid, cat, key});
         save(); render();
+    }
+
+    function handleSwap(id) {
+        if(swapTargetId === null) { swapTargetId = id; }
+        else {
+            const idxA = courtIds.indexOf(swapTargetId); const idxB = courtIds.indexOf(id);
+            if(idxA !== -1) courtIds[idxA] = id; if(idxB !== -1) courtIds[idxB] = swapTargetId;
+            swapTargetId = null;
+        }
+        save(); render();
+    }
+
+    function updateInfo(id, field, val) { players[id][field] = val; save(); }
+
+    function modifyScore(side, val) {
+        let rotated = false; let pRights = serveRights;
+        if(side === 'us' && val > 0 && serveRights === 'them') { rotate(); serveRights = 'us'; rotated = true; }
+        else if(side === 'them' && val > 0) serveRights = 'them';
+        score[side] += val;
+        if(val > 0) { if(side==='us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; }
+        history.push({type:'score', side, val, rotated, pRights});
+        save(); render();
+    }
+
+    function rotate() { courtIds = [courtIds[1], courtIds[2], courtIds[3], courtIds[4], courtIds[5], courtIds[0]]; currentRot = currentRot === 6 ? 1 : currentRot + 1; }
+
+    function updateAnalysis() {
+        const ana = document.getElementById('live-analysis');
+        let text = "<b>【分析レポート】</b><br>";
+        const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d);
+        text += `最高得点R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>`;
+        text += `最弱失点R: S${sortedRot[5].i} (${sortedRot[5].d})<br>`;
+        const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0];
+        if(bestSpiker.spike.ex > 0) text += `最多得点者: #${bestSpiker.no} ${bestSpiker.name}`;
+        ana.innerHTML = text;
     }
 
     function undo() {
-        if(history.length === 0) return;
+        if(!history.length) return;
         const last = history.pop();
-        if(last.type === 'stat') players[last.pid][last.cat][last.key]--;
-        else if(last.type === 'score') {
+        if(last.type==='stat') players[last.pid][last.cat][last.key]--;
+        else {
             score[last.side] -= last.val;
-            if(last.val > 0) { if(last.side === 'us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; }
-            if(last.rotated) { const p = courtIds; courtIds = [p[5], p[0], p[1], p[2], p[3], p[4]]; currentRot = currentRot === 1 ? 6 : currentRot - 1; }
-            serveRights = last.prevServeRights;
+            if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; }
+            if(last.rotated) { courtIds = [courtIds[5], courtIds[0], courtIds[1], courtIds[2], courtIds[3], courtIds[4]]; currentRot = currentRot === 1 ? 6 : currentRot - 1; }
+            serveRights = last.pRights;
         }
         save(); render();
     }
 
-    function updateFeedback() {
-        const fb = document.getElementById('live-feedback');
-        let html = "<b>【履歴】</b><br>";
-        history.slice(-1).forEach(h => html += `<span style="color:#aaa">${h.type==='stat' ? h.label : h.side + "点追加"}</span>`);
-        const worst = [...rotStats].map((s,i)=>({i,d:s.plus-s.minus})).slice(1).sort((a,b)=>a.d-b.d)[0];
-        if(worst && worst.d < 0) html += `<br><b>【分析】</b>S${worst.i}劣勢(${worst.d})`;
-        fb.innerHTML = html;
-    }
-
-    let swapId = null;
-    function swap(id) {
-        if(swapId === null) { swapId = id; save(); render(); }
-        else {
-            const idxA = courtIds.indexOf(swapId); const idxB = courtIds.indexOf(id);
-            if(idxA !== -1) courtIds[idxA] = id; if(idxB !== -1) courtIds[idxB] = swapId;
-            swapId = null; save(); render();
-        }
-    }
-
-    function finishGame() { if(confirm("初期化しますか？")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
-    const getEff = (s) => { const t = s.ex + s.ok + s.bad + s.miss; return t > 0 ? ((s.ex - s.miss) / t * 100).toFixed(0) : "0"; };
-    const getRecRate = (r) => { const t = r.a + r.b + r.c + r.miss; return t > 0 ? ((r.a * 100 + r.b * 50) / t).toFixed(0) : "0"; };
-
-    window.onload = () => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if(saved) {
-            const data = JSON.parse(saved);
-            Object.assign(players, data.players); courtIds = data.courtIds; score = data.score;
-            currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats; history = data.history;
-            render();
-        } else { render(); }
-        updateFeedback();
-    };
+    function finishGame() { if(confirm("全データをリセットしますか？")) { localStorage.clear(); location.reload(); } }
+    const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
+    const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
+    window.onload = () => { render(); updateAnalysis(); };
 </script>
 </body>
 </html>
