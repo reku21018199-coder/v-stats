@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v7.6</title>
+    <title>V-Stats Pro v7.7</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -21,11 +21,14 @@
             border-radius: 4px; 
             border: 2px solid #fff; 
             display: grid; 
+            /* 横幅は3等分、高さは「最低250pxを確保」し、余れば均等に伸びる */
             grid-template-columns: repeat(3, 1fr); 
-            grid-template-rows: repeat(2, 1fr);
+            grid-template-rows: repeat(2, minmax(250px, 1fr));
             gap: 4px; 
             padding: 4px;
             box-sizing: border-box;
+            /* 画面が低くて250px×2段が収まらない場合は縦スクロールさせる */
+            overflow-y: auto; 
         }
         
         /* 右側：操作パネル */
@@ -55,21 +58,40 @@
         #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; }
 
         /* 選手カード */
-        .player-card { background: var(--card-bg); border-radius: 4px; padding: 2px 4px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; min-height: 0; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; height: 24px; }
-        .player-header input { background: transparent; border: none; color: #fff; font-size: 11px; font-weight: bold; width: 35%; padding: 0; }
+        .player-card { 
+            background: var(--card-bg); 
+            border-radius: 4px; 
+            padding: 4px 6px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            border: 2px solid transparent; 
+            box-sizing: border-box;
+        }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; margin-bottom: 2px; }
+        .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 35%; padding: 0; }
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px var(--blue); }
 
-        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #333; padding: 1px 0; min-height: 0; }
-        .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; }
-        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 1px 0; }
-        .btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; padding: 4px 0; font-weight: bold; cursor: pointer; }
+        /* 各スタッツの行：最低限の高さを確保しつつ均等配置 */
+        .stat-item { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-evenly; 
+            border-bottom: 1px solid #333; 
+            padding: 2px 0; 
+            min-height: 42px; /* 潰れない最低の高さ */
+        }
+        .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; line-height: 1; }
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 2px 0; }
+        .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 4px 0; font-weight: bold; cursor: pointer; }
         
         .num-row { display: flex; justify-content: space-around; font-size: 13px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; }
-        .rate-txt { font-size: 9px; color: #aaa; }
+        .rate-txt { font-size: 10px; color: #aaa; line-height: 1; }
 
+        /* スマホ縦画面向け */
         @media screen and (max-width: 600px) {
-            .court-section { grid-template-columns: 1fr; overflow-y: auto; }
+            .court-section { grid-template-columns: 1fr; grid-template-rows: auto; }
         }
     </style>
 </head>
@@ -81,7 +103,7 @@
     <div class="control-section">
         <div class="action-panel">
             <div class="bench-menu">
-                <button class="cmd-btn" id="bench-trigger" style="background:var(--blue); height:40px; color:white; font-weight:bold; border-radius:4px;" onclick="toggleBench()">控え・交代 ▼</button>
+                <button class="cmd-btn" id="bench-trigger" style="background:var(--blue); height:40px; color:white; font-weight:bold; border-radius:4px; border:none; cursor:pointer;" onclick="toggleBench()">控え・交代 ▼</button>
                 <div id="bench-list"></div>
             </div>
             
@@ -105,7 +127,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'vstats_v7_6';
+    const STORAGE_KEY = 'vstats_v7_6'; // データ引継ぎのためキーは据え置き
     let players = JSON.parse(localStorage.getItem(STORAGE_KEY))?.players || Array.from({length: 15}, (_, i) => ({
         id: i, no: i+1, name: `選手${i+1}`,
         spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0},
@@ -168,7 +190,10 @@
         const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
         return `
             <div class="stat-item">
-                <div style="display:flex; justify-content:space-between;"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <span class="stat-label">${label}</span>
+                    <span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span>
+                </div>
                 <div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div>
                 <div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div>
             </div>`;
@@ -203,6 +228,7 @@
     }
 
     function updateInfo(id, field, val) { players[id][field] = val; save(); }
+    
     function modifyScore(side, val) {
         let rotated = false; let pRights = serveRights;
         if(side === 'us' && val > 0 && serveRights === 'them') { rotate(); serveRights = 'us'; rotated = true; }
@@ -238,7 +264,7 @@
         save(); render();
     }
 
-    function finishGame() { if(confirm("初期化？")) { localStorage.clear(); location.reload(); } }
+    function finishGame() { if(confirm("初期化しますか？")) { localStorage.clear(); location.reload(); } }
     const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
     window.onload = () => { render(); updateAnalysis(); };
