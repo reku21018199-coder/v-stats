@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v9.6 | Realtime Full Sync</title>
+    <title>V-Stats Pro v9.7 | Live Sync</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -13,7 +13,6 @@
         body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100vh; }
         .main-container { display: flex; height: 100vh; padding: 4px; gap: 4px; box-sizing: border-box; }
         
-        /* スマホ横画面対応：カードが絶対に潰れないグリッド設定 */
         .court-section { 
             flex: 8; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; 
             display: grid; grid-template-columns: repeat(3, 1fr); 
@@ -33,7 +32,6 @@
         .rot-info { background: #0d47a1; border-radius: 4px; padding: 6px; text-align: center; font-weight: bold; font-size: 18px; color: var(--neon-blue); }
         #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; }
 
-        /* 選手カード */
         .player-card { background: var(--card-bg); border-radius: 4px; padding: 4px 6px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; box-sizing: border-box; }
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; }
         .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 35%; padding: 0; }
@@ -82,16 +80,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // あなたのFirebase設定
+    // --- 新しく作成したv-stats-dataのConfig ---
     const firebaseConfig = {
-        apiKey: "AIzaSyDBnheYoLhMRg3VTAEj8BfDLLOOt4ImRkk",
-        authDomain: "v-status-860d4.firebaseapp.com",
-        databaseURL: "https://v-status-860d4-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "v-status-860d4",
-        storageBucket: "v-status-860d4.firebasestorage.app",
-        messagingSenderId: "583329376307",
-        appId: "1:583329376307:web:c288fc9b312655633a1b46",
-        measurementId: "G-GBVG4B1MQY"
+        apiKey: "AIzaSyA9f9fpeHTZrsumsz0hCdFEOw5iqVRszdI",
+        authDomain: "v-stats-data.firebaseapp.com",
+        databaseURL: "https://v-stats-data-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "v-stats-data",
+        storageBucket: "v-stats-data.firebasestorage.app",
+        messagingSenderId: "374290831902",
+        appId: "1:374290831902:web:83e5226e1ea5568e73ec0f"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -105,7 +102,6 @@
 
     let players, courtIds, score, currentRot, serveRights, rotStats, history = [], swapSourceId = null;
 
-    // クラウドからのデータ受信（リアルタイム）
     onValue(gameRef, (snapshot) => {
         const data = snapshot.val() || defaultData;
         players = data.players; courtIds = data.courtIds; score = data.score;
@@ -116,12 +112,10 @@
         render(); updateAnalysis();
     });
 
-    // クラウドへのデータ送信
     function save() {
         set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats });
     }
 
-    // 画面の描画
     function render() {
         if(!players) return;
         const court = document.getElementById('court'); court.innerHTML = '';
@@ -143,7 +137,6 @@
             `;
             court.appendChild(card);
             
-            // 名前・背番号変更イベント
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); });
             document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
@@ -159,7 +152,6 @@
         return `<div class="stat-item"><div style="display:flex;justify-content:space-between"><span class="stat-label">${label}</span><span style="font-size:10px;color:#aaa">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
-    // HTMLから呼べるようにwindowオブジェクトに登録
     window.record = (pid, cat, type) => {
         const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type;
         players[pid][cat][key]++; history.push({type:'stat', pid, cat, key}); save();
