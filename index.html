@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v9.8 | UI Optimized</title>
+    <title>V-Stats Pro v9.9 | UI Fixed</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
@@ -13,11 +13,11 @@
         body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100vh; }
         .main-container { display: flex; height: 100vh; padding: 4px; gap: 4px; box-sizing: border-box; }
         
-        /* 修正：カード高さを280pxに広げ、余裕を持たせる */
+        /* 修正1: カードの最低高さを 340px に拡張し、潰れるのを物理的に防ぐ */
         .court-section { 
             flex: 8; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; 
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            grid-template-rows: repeat(2, minmax(280px, 1fr));
+            grid-template-rows: repeat(2, minmax(340px, 1fr));
             gap: 4px; padding: 4px; box-sizing: border-box; overflow-y: auto; 
         }
         
@@ -33,27 +33,29 @@
         .rot-info { background: #0d47a1; border-radius: 4px; padding: 6px; text-align: center; font-weight: bold; font-size: 18px; color: var(--neon-blue); }
         #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; }
 
-        .player-card { background: var(--card-bg); border-radius: 4px; padding: 4px 6px; display: flex; flex-direction: column; gap: 2px; border: 2px solid transparent; box-sizing: border-box; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 2px; margin-bottom: 2px; }
+        .player-card { 
+            background: var(--card-bg); border-radius: 4px; padding: 6px; 
+            display: flex; flex-direction: column; gap: 4px; /* カード内の要素の隙間を確保 */
+            border: 2px solid transparent; box-sizing: border-box; 
+        }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 4px; }
         .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 35%; padding: 0; }
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px var(--blue); }
 
-        /* 修正：絶対にかぶらないスタッツ行の設計 */
+        /* 修正2: flex: 1 0 auto; で「中身より小さく縮むこと」を絶対に禁止する */
         .stat-item { 
-            flex: 1; display: flex; flex-direction: column; justify-content: center; 
-            gap: 3px; /* 縦の隙間を強制 */
-            border-bottom: 1px solid #333; padding: 3px 0; min-height: 46px; 
+            flex: 1 0 auto; 
+            display: flex; flex-direction: column; justify-content: center; 
+            gap: 4px; /* 項目名・ボタン・数字の間に必ず4pxの隙間を作る */
+            border-bottom: 1px solid #333; padding-bottom: 4px; 
         }
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; }
         .rate-txt { font-size: 10px; color: #aaa; }
         
-        /* ボタンと数字の列を完全に一致させる */
-        .btn-grid, .num-row { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; 
-        }
-        .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 4px 0; font-weight: bold; cursor: pointer; }
-        .num-row { text-align: center; font-size: 13px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; }
+        .btn-grid, .num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+        .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 5px 0; font-weight: bold; cursor: pointer; }
+        .num-row { text-align: center; font-size: 13px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; margin-top: 1px;}
         
         #sync-status { text-align: center; font-size: 10px; color: #888; margin-top: 2px; }
         .online { color: var(--green) !important; font-weight: bold; }
@@ -154,7 +156,6 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; document.getElementById('current-rot').innerText = currentRot;
     }
 
-    // UI修正：stat-header クラスを追加し、数字(num-row)の出力をボタン(btn-grid)と完全に同調させました
     function createRow(pid, label, cat, btns) {
         const s = players[pid][cat];
         const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
