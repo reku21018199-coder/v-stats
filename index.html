@@ -3,35 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Pro v10.1 | Ultimate Responsive</title>
+    <title>V-Stats Enterprise | FIT</title>
     <style>
         :root {
             --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
             --gold: #d4af37; --green: #4caf50; --orange: #ff9800; --red: #f44336; --blue: #2196f3;
-            --neon-blue: #00e5ff;
+            --neon-blue: #00e5ff; --header-bg: #0d47a1;
         }
-        /* 100dvhでスマホのブラウザバーの長さを正確に計算し、はみ出しを防ぐ */
-        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw; }
-        .main-container { display: flex; flex-direction: row; height: 100%; padding: 4px; gap: 4px; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw; display: flex; flex-direction: column; }
         
-        .court-section { 
-            flex: 1; /* flex: 8 から変更し、残りの幅をすべて取るように */
-            min-width: 0; min-height: 0; /* スクロールを確実に効かせる魔法のコード */
-            background: var(--court-green); border-radius: 4px; border: 2px solid #fff; 
-            display: grid; grid-template-columns: repeat(3, 1fr); 
-            grid-template-rows: repeat(2, minmax(max-content, 1fr));
-            gap: 6px; padding: 6px; box-sizing: border-box; 
-            overflow-y: auto; /* スクロール復活 */
-        }
+        /* --- 💡 ヘッダーとメニューの追加 --- */
+        .app-header { background: var(--header-bg); height: 44px; display: flex; align-items: center; padding: 0 10px; flex: none; border-bottom: 2px solid var(--blue); }
+        .menu-btn { background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 15px; }
+        .app-title { font-weight: bold; font-size: 16px; color: var(--neon-blue); text-shadow: 0 0 5px var(--blue); }
+        .team-id-badge { margin-left: auto; background: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px; border: 1px solid var(--blue); }
         
-        /* 操作パネルの幅を固定し、画面外に押し出されるのを防ぐ */
-        .control-section { 
-            flex: 0 0 170px; /* PCでは幅170px固定 */
-            display: flex; flex-direction: column; gap: 4px; height: 100%; 
-            min-height: 0; overflow-y: auto;
-        }
+        .side-menu { position: fixed; top: 46px; left: -250px; width: 250px; height: calc(100% - 46px); background: #1a1a1a; border-right: 2px solid var(--blue); transition: left 0.3s ease; z-index: 1000; display: flex; flex-direction: column; }
+        .side-menu.open { left: 0; }
+        .menu-item { padding: 15px 20px; border-bottom: 1px solid #333; cursor: pointer; font-weight: bold; }
+        .menu-item:hover { background: #333; }
+        
+        /* 画面コンテナ（メニューとメイン画面） */
+        .app-body { flex: 1; position: relative; min-height: 0; }
+        .view-section { display: none; height: 100%; width: 100%; padding: 4px; box-sizing: border-box; overflow-y: auto; }
+        .view-section.active { display: flex; }
+
+        /* --- 既存のライブ画面CSS --- */
+        .main-container { flex-direction: row; height: 100%; width: 100%; gap: 4px; }
+        .court-section { flex: 1; min-width: 0; min-height: 0; background: var(--court-green); border-radius: 4px; border: 2px solid #fff; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(max-content, 1fr)); gap: 6px; padding: 6px; box-sizing: border-box; overflow-y: auto; }
+        .control-section { flex: 0 0 170px; display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; overflow-y: auto; }
         .action-panel { flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
-        
         #bench-list { display: none; background: #222; border: 1px solid #444; max-height: 200px; overflow-y: auto; border-radius: 4px; }
         .bench-item { padding: 10px; border-bottom: 1px solid #333; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
         .score-box { background: #000; border: 1px solid #555; border-radius: 6px; padding: 4px; text-align: center; }
@@ -39,67 +40,106 @@
         .score-ctrl { display: flex; justify-content: space-around; gap: 2px; }
         .small-btn { flex: 1; height: 35px; background: #444; border: none; color: #fff; border-radius: 4px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .rot-info { background: #0d47a1; border-radius: 4px; padding: 6px; text-align: center; font-weight: bold; font-size: 18px; color: var(--neon-blue); }
-        
         #live-analysis { flex: 1; background: #000; border-top: 2px solid var(--blue); font-size: 10px; padding: 6px; color: var(--neon-blue); overflow-y: auto; min-height: 60px;}
         #action-buttons { display: flex; gap: 4px; height: 35px; transition: all 0.3s ease; }
-
         .player-card { background: var(--card-bg); border-radius: 4px; padding: 6px 6px 10px 6px; display: flex; flex-direction: column; gap: 4px; border: 2px solid transparent; box-sizing: border-box; }
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 4px; }
         .player-header input { background: transparent; border: none; color: #fff; font-size: 12px; font-weight: bold; width: 35%; padding: 0; }
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px var(--blue); }
-
         .stat-item { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 4px; border-bottom: 1px solid #333; padding-bottom: 4px; }
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 10px; color: var(--gold); font-weight: bold; }
         .rate-txt { font-size: 10px; color: #aaa; }
-        
         .btn-grid, .num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
         .btn { border: none; border-radius: 2px; color: #fff; font-size: 11px; padding: 5px 0; font-weight: bold; cursor: pointer; }
         .num-row { text-align: center; font-size: 14px; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 3px var(--blue); line-height: 1; margin-top: 2px;}
-        
         #sync-status { text-align: center; font-size: 10px; color: #888; margin-top: 2px; flex: none; }
         .online { color: var(--green) !important; font-weight: bold; }
 
-        /* 📱 スマホ用レイアウト：縦並びに変更し、上が操作パネル、下がコート */
+        /* --- 💡 プレイヤー一覧画面CSS --- */
+        #view-players { flex-direction: column; background: #111; gap: 10px; padding: 10px;}
+        .status-table-container { overflow-x: auto; border: 1px solid #333; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; text-align: center; font-size: 12px; }
+        th { background: #222; color: var(--gold); padding: 8px; border: 1px solid #444; position: sticky; top: 0; }
+        td { background: #000; padding: 6px; border: 1px solid #333; }
+        td input { background: transparent; border: 1px solid #555; color: #fff; text-align: center; width: 60px; padding: 4px; border-radius: 2px; font-weight: bold;}
+        td input:focus { border-color: var(--neon-blue); outline: none; }
+
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
             .control-section { flex: none; width: 100%; height: auto; max-height: 35%; border-bottom: 2px solid var(--blue); padding-bottom: 4px; }
             .court-section { grid-template-columns: 1fr; grid-template-rows: auto; }
-            #action-buttons { height: 40px; } /* スマホではボタンを少し高く */
+            #action-buttons { height: 40px; }
         }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <div class="court-section" id="court"></div>
-    <div class="control-section">
-        <div class="action-panel">
-            <button style="background:var(--blue); height:40px; flex:none; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="toggleBench()">控え・交代 ▼</button>
-            <div id="bench-list"></div>
-            <div class="score-box">
-                <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
-                <div class="score-ctrl">
-                    <button class="small-btn" onclick="modifyScore('us', 1)">自+</button>
-                    <button class="small-btn" onclick="modifyScore('them', 1)">相+</button>
+<div class="app-header">
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="app-title">V-Stats Enterprise</div>
+    <div class="team-id-badge" id="display-team-id">fit_v_reku</div>
+</div>
+
+<div class="app-body">
+    <div class="side-menu" id="side-menu">
+        <div class="menu-item" onclick="switchView('live')">🏐 ライブ入力画面</div>
+        <div class="menu-item" onclick="switchView('players')">👥 プレイヤー一覧・編集</div>
+        <div class="menu-item" onclick="switchView('history')">📊 試合履歴（準備中）</div>
+        <div class="menu-item" style="color:var(--red); border-top: 2px solid #444; margin-top: auto;" onclick="alert('チーム切替画面へ移動します（準備中）')">↩ チーム切替ログアウト</div>
+    </div>
+
+    <div id="view-live" class="view-section active main-container">
+        <div class="court-section" id="court"></div>
+        <div class="control-section">
+            <div class="action-panel">
+                <button style="background:var(--blue); height:40px; flex:none; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="toggleBench()">控え・交代 ▼</button>
+                <div id="bench-list"></div>
+                <div class="score-box">
+                    <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
+                    <div class="score-ctrl">
+                        <button class="small-btn" onclick="modifyScore('us', 1)">自+</button>
+                        <button class="small-btn" onclick="modifyScore('them', 1)">相+</button>
+                    </div>
                 </div>
+                <div class="rot-info">S<span id="current-rot">1</span></div>
+                <div id="live-analysis"></div>
+                <div id="action-buttons">
+                    <button class="small-btn" onclick="undo()">戻る</button>
+                    <button class="small-btn" style="background:var(--red);" onclick="finishGame()">集計して消去</button>
+                </div>
+                <div id="sync-status">● 準備中...</div>
             </div>
-            <div class="rot-info">S<span id="current-rot">1</span></div>
-            
-            <div id="live-analysis"></div>
-            <div id="action-buttons">
-                <button class="small-btn" onclick="undo()">戻る</button>
-                <button class="small-btn" style="background:var(--red);" onclick="finishGame()">消去</button>
-            </div>
-            
-            <div id="sync-status">● 準備中...</div>
         </div>
+    </div>
+
+    <div id="view-players" class="view-section">
+        <h2 style="margin: 0 0 10px 0; font-size: 16px; color: var(--neon-blue);">プレイヤー・ステータス編集</h2>
+        <div class="status-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th><th>名前</th>
+                        <th>身長(cm)</th><th>最高到達(cm)</th><th>サーブ速(km/h)</th><th>スパイク速(km/h)</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="player-status-tbody">
+                    </tbody>
+            </table>
+        </div>
+        <div style="font-size: 11px; color: #aaa; margin-top: 5px;">※数値を変えると自動でFirebaseに保存されます。</div>
+    </div>
+
+    <div id="view-history" class="view-section">
+        <h2 style="color: var(--neon-blue);">試合履歴</h2>
+        <p>ここに過去のスタッツ履歴が一覧で表示されます。</p>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA9f9fpeHTZrsumsz0hCdFEOw5iqVRszdI",
@@ -113,43 +153,91 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const gameRef = ref(db, 'vstats/live_game');
+    
+    // 💡 チームIDの設定（今回はfit_v_reku固定、将来的にはログインで変わる）
+    const CURRENT_TEAM_ID = "fit_v_reku";
+    
+    // 💡 Firebaseの保存階層を「チームごと」に完全に分離しました！
+    const gameRef = ref(db, `teams/${CURRENT_TEAM_ID}/live_game`);
+    const statusRef = ref(db, `teams/${CURRENT_TEAM_ID}/players_status`);
 
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
-    
-    // 💡 役割ごとのUI最適化（分析枠を消し、ボタンを巨大化）
     const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
     if (isSpecialRole) {
         document.getElementById('live-analysis').style.display = 'none';
         const actionBtns = document.getElementById('action-buttons');
-        actionBtns.style.flex = '1'; // 余ったスペースをすべて埋める
-        actionBtns.querySelectorAll('button').forEach(btn => {
-            btn.style.height = '100%';     // 高さを最大まで伸ばす
-            btn.style.fontSize = '18px';   // 文字も大きくして押しやすく
-        });
+        actionBtns.style.flex = '1'; 
+        actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '18px'; });
     }
 
+    // 💡 既存の試合データ構造
     const defaultData = {
         players: Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} })),
         courtIds: [0,1,2,3,4,5], score: {us:0, them:0}, currentRot: 1, serveRights: 'us', rotStats: Array.from({length: 7}, () => ({plus:0, minus:0}))
     };
+    
+    // 💡 新しい「ステータス（手動入力）」のデータ構造
+    const defaultStatus = Array.from({length: 15}, (_, i) => ({ id: i, height: "", reach: "", serve_speed: "", spike_speed: "" }));
 
     let players, courtIds, score, currentRot, serveRights, rotStats, history = [], swapSourceId = null;
+    let playersStatus = [];
 
+    // --- メニュー切り替えロジック ---
+    window.toggleMenu = () => { document.getElementById('side-menu').classList.toggle('open'); };
+    window.switchView = (viewId) => {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+        document.getElementById('side-menu').classList.remove('open');
+        if(viewId === 'players') renderStatusTable(); // プレイヤー画面を開いた時に表を作る
+    };
+
+    // --- Firebase データ同期 ---
     onValue(gameRef, (snapshot) => {
         const data = snapshot.val() || defaultData;
         players = data.players; courtIds = data.courtIds; score = data.score;
         currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats;
-        
         document.getElementById('sync-status').innerText = '● 同期中 (' + (myRole ? myRole : 'all') + ')';
         document.getElementById('sync-status').className = 'online';
         render(); 
-        if(!isSpecialRole) updateAnalysis(); // 分析画面がある時だけ計算する
+        if(!isSpecialRole) updateAnalysis();
+    });
+
+    onValue(statusRef, (snapshot) => {
+        playersStatus = snapshot.val() || defaultStatus;
+        if(document.getElementById('view-players').classList.contains('active')) renderStatusTable();
     });
 
     function save() { set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats }); }
+    
+    // 💡 ステータス（身体データ）だけの保存関数
+    window.saveStatus = (pid, field, value) => {
+        playersStatus[pid][field] = value;
+        set(statusRef, playersStatus);
+    };
 
+    // --- プレイヤー一覧テーブルの描画 ---
+    function renderStatusTable() {
+        if(!players || !playersStatus) return;
+        const tbody = document.getElementById('player-status-tbody');
+        tbody.innerHTML = '';
+        players.forEach(p => {
+            const stat = playersStatus[p.id] || { height: "", reach: "", serve_speed: "", spike_speed: "" };
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>#${p.no}</td>
+                <td style="font-weight:bold; color:var(--neon-blue);">${p.name}</td>
+                <td><input type="number" value="${stat.height}" onchange="saveStatus(${p.id}, 'height', this.value)"></td>
+                <td><input type="number" value="${stat.reach}" onchange="saveStatus(${p.id}, 'reach', this.value)"></td>
+                <td><input type="number" value="${stat.serve_speed}" onchange="saveStatus(${p.id}, 'serve_speed', this.value)"></td>
+                <td><input type="number" value="${stat.spike_speed}" onchange="saveStatus(${p.id}, 'spike_speed', this.value)"></td>
+                <td><span style="color:var(--green); font-size:10px;">同期中</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- 既存のライブ画面の描画・ロジック（そのまま） ---
     function render() {
         if(!players) return;
         const court = document.getElementById('court'); court.innerHTML = '';
@@ -157,32 +245,14 @@
             const p = players[courtIds[idx]];
             const card = document.createElement('div');
             card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`;
-            
             let rowsHTML = '';
-            if (!myRole || myRole === 'attack') {
-                rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']);
-                rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']);
-            }
-            if (!myRole || myRole === 'defense' || myRole === 'defence') {
-                rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']);
-                rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']);
-                rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']);
-            }
-
-            card.innerHTML = `
-                <div class="player-header">
-                    <input type="text" value="${p.no}" id="no-${p.id}">
-                    <input type="text" value="${p.name}" id="name-${p.id}">
-                    <span style="cursor:pointer;font-size:11px;color:var(--neon-blue);font-weight:bold;" onclick="handleSwap(${p.id})">🔄交代</span>
-                </div>
-                ${rowsHTML}
-            `;
+            if (!myRole || myRole === 'attack') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
+            if (!myRole || myRole === 'defense' || myRole === 'defence') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
+            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:11px;color:var(--neon-blue);font-weight:bold;" onclick="handleSwap(${p.id})">🔄交代</span></div>${rowsHTML}`;
             court.appendChild(card);
-            
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); });
             document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
-
         const blist = document.getElementById('bench-list'); blist.innerHTML = '';
         players.forEach(p => { if(!courtIds.includes(p.id)) { const item = document.createElement('div'); item.className = 'bench-item'; item.innerText = `#${p.no} ${p.name}`; item.onclick = () => window.handleSwap(p.id); blist.appendChild(item); } });
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; document.getElementById('current-rot').innerText = currentRot;
@@ -191,59 +261,21 @@
     function createRow(pid, label, cat, btns) {
         const s = players[pid][cat];
         const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
-        return `
-        <div class="stat-item">
-            <div class="stat-header">
-                <span class="stat-label">${label}</span>
-                <span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span>
-            </div>
-            <div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div>
-            <div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div>
-        </div>`;
+        return `<div class="stat-item"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
-    window.record = (pid, cat, type) => {
-        const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type;
-        players[pid][cat][key]++; history.push({type:'stat', pid, cat, key}); save();
-    };
-
-    window.modifyScore = (side, val) => {
-        let rotated = false; let pRights = serveRights;
-        if(side==='us' && val>0 && serveRights==='them') { courtIds=[courtIds[1],courtIds[2],courtIds[3],courtIds[4],courtIds[5],courtIds[0]]; currentRot=currentRot===6?1:currentRot+1; serveRights='us'; rotated=true; }
-        else if(side==='them' && val>0) serveRights='them';
-        score[side]+=val; if(val>0) { if(side==='us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; }
-        history.push({type:'score', side, val, rotated, pRights}); save();
-    };
-
-    window.handleSwap = (id) => {
-        if(swapSourceId === null) { swapSourceId = id; if(!courtIds.includes(id)) window.toggleBench(); render(); } 
-        else { const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); if(idxS!==-1 && idxT!==-1) [courtIds[idxS], courtIds[idxT]] = [courtIds[idxT], courtIds[idxS]]; else if(idxS!==-1) courtIds[idxS]=id; else if(idxT!==-1) courtIds[idxT]=swapSourceId; swapSourceId=null; document.getElementById('bench-list').style.display='none'; save(); }
-    };
-
-    window.undo = () => {
-        if(!history.length) return;
-        const last = history.pop();
-        if(last.type==='stat') players[last.pid][last.cat][last.key]--;
-        else {
-            score[last.side]-=last.val;
-            if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; }
-            if(last.rotated) { courtIds=[courtIds[5],courtIds[0],courtIds[1],courtIds[2],courtIds[3],courtIds[4]]; currentRot=currentRot===1?6:currentRot-1; }
-            serveRights = last.pRights;
-        }
-        save();
-    };
-
-    window.finishGame = () => { if(confirm("初期化しますか？")) { set(gameRef, defaultData); } };
-    window.toggleBench = () => { const l = document.getElementById('bench-list'); l.style.display = l.style.display==='block'?'none':'block'; };
+    window.record = (pid, cat, type) => { const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type; players[pid][cat][key]++; history.push({type:'stat', pid, cat, key}); save(); };
+    window.modifyScore = (side, val) => { let rotated = false; let pRights = serveRights; if(side==='us' && val>0 && serveRights==='them') { courtIds=[courtIds[1],courtIds[2],courtIds[3],courtIds[4],courtIds[5],courtIds[0]]; currentRot=currentRot===6?1:currentRot+1; serveRights='us'; rotated=true; } else if(side==='them' && val>0) serveRights='them'; score[side]+=val; if(val>0) { if(side==='us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; } history.push({type:'score', side, val, rotated, pRights}); save(); };
+    window.handleSwap = (id) => { if(swapSourceId === null) { swapSourceId = id; if(!courtIds.includes(id)) window.toggleBench(); render(); } else { const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); if(idxS!==-1 && idxT!==-1) [courtIds[idxS], courtIds[idxT]] = [courtIds[idxT], courtIds[idxS]]; else if(idxS!==-1) courtIds[idxS]=id; else if(idxT!==-1) courtIds[idxT]=swapSourceId; swapSourceId=null; document.getElementById('bench-list').style.display='none'; save(); } };
+    window.undo = () => { if(!history.length) return; const last = history.pop(); if(last.type==='stat') players[last.pid][last.cat][last.key]--; else { score[last.side]-=last.val; if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; } if(last.rotated) { courtIds=[courtIds[5],courtIds[0],courtIds[1],courtIds[2],courtIds[3],courtIds[4]]; currentRot=currentRot===1?6:currentRot-1; } serveRights = last.pRights; } save(); };
     
-    const updateAnalysis = () => {
-        const ana = document.getElementById('live-analysis');
-        if (!rotStats || rotStats.length < 7) return;
-        const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d);
-        const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0];
-        ana.innerHTML = `<b>【分析】</b><br>最高R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>最弱R: S${sortedRot[5].i} (${sortedRot[5].d})<br>得点王: #${bestSpiker.no} ${bestSpiker.name}`;
+    window.finishGame = () => { 
+        if(confirm("この試合のデータを集計して初期化しますか？（※履歴への保存機能は準備中）")) { 
+            set(gameRef, defaultData); // 今はとりあえず初期化だけ
+        } 
     };
-
+    window.toggleBench = () => { const l = document.getElementById('bench-list'); l.style.display = l.style.display==='block'?'none':'block'; };
+    const updateAnalysis = () => { const ana = document.getElementById('live-analysis'); if (!rotStats || rotStats.length < 7) return; const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d); const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0]; ana.innerHTML = `<b>【分析】</b><br>最高R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>最弱R: S${sortedRot[5].i} (${sortedRot[5].d})<br>得点王: #${bestSpiker.no} ${bestSpiker.name}`; };
     const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
 </script>
