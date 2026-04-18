@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | Soft Dark</title>
+    <title>V-Stats Enterprise | v1.3</title>
     <style>
         :root {
-            /* 💡 目に優しいカラーパレットに変更 */
             --court-green: #2d4a22; 
             --card-bg: #252830;     
             --text: #e4e6eb;        
@@ -19,7 +18,6 @@
             --neon-blue: #5cb6ff;   
         }
         
-        /* 💡 背景を完全な黒からダークグレーに変更 */
         body { font-family: sans-serif; background: #181a1f; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw; display: flex; flex-direction: column; }
         
         .app-header { background: var(--header-bg); height: 38px; display: flex; align-items: center; padding: 0 8px; flex: none; border-bottom: 2px solid var(--blue); }
@@ -35,14 +33,14 @@
         .view-section { display: none; height: 100%; width: 100%; padding: 2px; box-sizing: border-box; }
         .view-section.active { display: flex; }
 
-        /* --- ライブ画面：コンパクト設計（変更なし） --- */
+        /* --- ライブ画面：基本設計 --- */
         .main-container { flex-direction: row; height: 100%; width: 100%; gap: 2px; }
         .court-section { 
             flex: 1; min-width: 0; min-height: 0; background: var(--court-green); 
             border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); 
             display: grid; grid-template-columns: repeat(3, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            gap: 2px; padding: 2px; box-sizing: border-box; overflow: hidden; 
+            gap: 2px; padding: 2px; box-sizing: border-box; overflow-y: auto; /* はみ出した時用にautoに変更 */
         }
         .control-section { flex: 0 0 150px; display: flex; flex-direction: column; gap: 2px; height: 100%; min-height: 0; }
         .action-panel { flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
@@ -53,7 +51,7 @@
         .score-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px; text-align: center; }
         .score-display { font-size: 28px; font-weight: bold; color: var(--gold); line-height: 1; }
         .score-ctrl { display: flex; justify-content: space-around; gap: 2px; margin-top: 2px; }
-        .small-btn { flex: 1; height: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 3px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .small-btn { flex: 1; height: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 3px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         .rot-info { background: #2c3e50; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 16px; color: var(--neon-blue); }
         
         #live-analysis { flex: 1; background: rgba(0,0,0,0.3); border-top: 1px solid var(--blue); font-size: 9px; padding: 4px; color: var(--neon-blue); overflow-y: auto; }
@@ -74,10 +72,32 @@
         .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; }
         
         .btn-grid, .num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
-        .btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; padding: 3px 0; font-weight: bold; }
+        .btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; padding: 3px 0; font-weight: bold; cursor: pointer; }
         .num-row { text-align: center; font-size: 11px; font-weight: bold; color: var(--neon-blue); line-height: 1; margin-top: 1px;}
         
         #sync-status { text-align: center; font-size: 9px; color: #888; padding-bottom: 2px; }
+
+        /* 💡 ==========================================
+           タブレット用メガUIモード (?role=tablet)
+           ========================================== */
+        body.tablet-mode .court-section { gap: 6px; padding: 6px; }
+        body.tablet-mode .control-section { flex: 0 0 220px; gap: 6px; }
+        body.tablet-mode .action-panel { gap: 6px; }
+        body.tablet-mode .player-card { padding: 8px 10px; gap: 6px; border-radius: 6px; }
+        body.tablet-mode .player-header { padding-bottom: 4px; margin-bottom: 4px; }
+        body.tablet-mode .player-header input { font-size: 16px; width: 45%; }
+        body.tablet-mode .player-header span { font-size: 14px; }
+        body.tablet-mode .stat-item { gap: 4px; padding: 4px 0; }
+        body.tablet-mode .stat-label { font-size: 13px; scale: 1; }
+        body.tablet-mode .rate-txt { font-size: 13px; scale: 1; }
+        body.tablet-mode .btn-grid { gap: 4px; }
+        body.tablet-mode .btn { font-size: 16px; padding: 10px 0; border-radius: 4px; } /* ボタンを劇的に巨大化 */
+        body.tablet-mode .num-row { font-size: 20px; margin-top: 6px; }
+        body.tablet-mode .score-display { font-size: 54px; }
+        body.tablet-mode .small-btn { font-size: 18px; height: 50px; border-radius: 6px; }
+        body.tablet-mode .rot-info { font-size: 28px; padding: 10px; }
+        body.tablet-mode #live-analysis { font-size: 12px; padding: 8px; line-height: 1.5; }
+        body.tablet-mode #action-buttons { height: 45px; gap: 6px; }
 
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
@@ -85,7 +105,7 @@
             .court-section { grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); overflow-y: auto; }
         }
 
-        /* 💡 プレイヤー一覧画面の配色も統一 */
+        /* プレイヤー一覧画面 */
         #view-players { flex-direction: column; background: transparent; gap: 8px; padding: 8px;}
         .status-table-container { overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; text-align: center; font-size: 11px; }
@@ -114,7 +134,7 @@
         <div class="court-section" id="court"></div>
         <div class="control-section">
             <div class="action-panel">
-                <button style="background:var(--blue); height:32px; flex:none; color:white; border:none; border-radius:4px; font-size:12px; font-weight:bold;" onclick="toggleBench()">控え・交代 ▼</button>
+                <button class="small-btn" style="background:var(--blue); flex:none;" onclick="toggleBench()">控え・交代 ▼</button>
                 <div id="bench-list"></div>
                 <div class="score-box">
                     <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
@@ -174,8 +194,13 @@
 
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
-    const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
     
+    // 💡 URLに ?role=tablet があれば、bodyに専用クラスを追加して全体を巨大化
+    if (myRole === 'tablet') {
+        document.body.classList.add('tablet-mode');
+    }
+
+    const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
     if (isSpecialRole) {
         document.getElementById('live-analysis').style.display = 'none';
         const actionBtns = document.getElementById('action-buttons');
@@ -238,9 +263,9 @@
             const card = document.createElement('div');
             card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`;
             let rowsHTML = '';
-            if (!myRole || myRole === 'attack') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
-            if (!myRole || myRole === 'defense' || myRole === 'defence') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
-            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:10px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`;
+            if (!myRole || myRole === 'attack' || myRole === 'tablet') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
+            if (!myRole || myRole === 'defense' || myRole === 'defence' || myRole === 'tablet') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
+            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:12px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄 交代</span></div>${rowsHTML}`;
             court.appendChild(card);
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); });
             document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
