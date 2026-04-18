@@ -3,61 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | FIT Compact</title>
+    <title>V-Stats Enterprise | Soft Dark</title>
     <style>
         :root {
-            --court-green: #1b5e20; --card-bg: #1e1e1e; --text: #fff;
-            --gold: #d4af37; --green: #4caf50; --orange: #ff9800; --red: #f44336; --blue: #2196f3;
-            --neon-blue: #00e5ff; --header-bg: #0d47a1;
+            /* 💡 目に優しいカラーパレットに変更 */
+            --court-green: #2d4a22; 
+            --card-bg: #252830;     
+            --text: #e4e6eb;        
+            --header-bg: #1e2127;   
+            --gold: #e5b567;
+            --green: #5eb67d;
+            --orange: #e89a5e;
+            --red: #e06c75;
+            --blue: #528bff;
+            --neon-blue: #5cb6ff;   
         }
-        body { font-family: sans-serif; background: #121212; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw; display: flex; flex-direction: column; }
+        
+        /* 💡 背景を完全な黒からダークグレーに変更 */
+        body { font-family: sans-serif; background: #181a1f; color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw; display: flex; flex-direction: column; }
         
         .app-header { background: var(--header-bg); height: 38px; display: flex; align-items: center; padding: 0 8px; flex: none; border-bottom: 2px solid var(--blue); }
         .menu-btn { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; margin-right: 12px; }
-        .app-title { font-weight: bold; font-size: 14px; color: var(--neon-blue); text-shadow: 0 0 5px var(--blue); }
-        .team-id-badge { margin-left: auto; background: #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; border: 1px solid var(--blue); }
+        .app-title { font-weight: bold; font-size: 14px; color: var(--neon-blue); text-shadow: 0 0 5px rgba(92, 182, 255, 0.5); }
+        .team-id-badge { margin-left: auto; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 11px; border: 1px solid var(--blue); }
         
-        .side-menu { position: fixed; top: 40px; left: -250px; width: 250px; height: calc(100% - 40px); background: #1a1a1a; border-right: 2px solid var(--blue); transition: left 0.3s ease; z-index: 1000; display: flex; flex-direction: column; }
+        .side-menu { position: fixed; top: 40px; left: -250px; width: 250px; height: calc(100% - 40px); background: #1e2127; border-right: 2px solid var(--blue); transition: left 0.3s ease; z-index: 1000; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .side-menu.open { left: 0; }
-        .menu-item { padding: 12px 20px; border-bottom: 1px solid #333; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .menu-item { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-weight: bold; font-size: 14px; color: var(--text); }
         
         .app-body { flex: 1; position: relative; min-height: 0; }
         .view-section { display: none; height: 100%; width: 100%; padding: 2px; box-sizing: border-box; }
         .view-section.active { display: flex; }
 
-        /* --- ライブ画面：徹底的なコンパクト化 --- */
+        /* --- ライブ画面：コンパクト設計（変更なし） --- */
         .main-container { flex-direction: row; height: 100%; width: 100%; gap: 2px; }
         .court-section { 
             flex: 1; min-width: 0; min-height: 0; background: var(--court-green); 
-            border-radius: 4px; border: 1px solid #fff; 
+            border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); 
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            grid-template-rows: repeat(2, 1fr); /* 均等に配置 */
+            grid-template-rows: repeat(2, 1fr); 
             gap: 2px; padding: 2px; box-sizing: border-box; overflow: hidden; 
         }
         .control-section { flex: 0 0 150px; display: flex; flex-direction: column; gap: 2px; height: 100%; min-height: 0; }
         .action-panel { flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
         
-        #bench-list { display: none; background: #222; border: 1px solid #444; max-height: 150px; overflow-y: auto; border-radius: 4px; }
-        .bench-item { padding: 8px; border-bottom: 1px solid #333; font-size: 12px; font-weight: bold; text-align: center; }
-        .score-box { background: #000; border: 1px solid #555; border-radius: 4px; padding: 2px; text-align: center; }
+        #bench-list { display: none; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); max-height: 150px; overflow-y: auto; border-radius: 4px; }
+        .bench-item { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: bold; text-align: center; color: var(--text); }
+        
+        .score-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px; text-align: center; }
         .score-display { font-size: 28px; font-weight: bold; color: var(--gold); line-height: 1; }
         .score-ctrl { display: flex; justify-content: space-around; gap: 2px; margin-top: 2px; }
-        .small-btn { flex: 1; height: 30px; background: #444; border: none; color: #fff; border-radius: 3px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .rot-info { background: #0d47a1; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 16px; color: var(--neon-blue); }
+        .small-btn { flex: 1; height: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 3px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .rot-info { background: #2c3e50; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 16px; color: var(--neon-blue); }
         
-        #live-analysis { flex: 1; background: #000; border-top: 1px solid var(--blue); font-size: 9px; padding: 4px; color: var(--neon-blue); overflow-y: auto; }
+        #live-analysis { flex: 1; background: rgba(0,0,0,0.3); border-top: 1px solid var(--blue); font-size: 9px; padding: 4px; color: var(--neon-blue); overflow-y: auto; }
         #action-buttons { display: flex; gap: 2px; height: 30px; }
 
-        /* 💡 選手カードの縮小 */
         .player-card { 
             background: var(--card-bg); border-radius: 3px; padding: 2px 4px; 
             display: flex; flex-direction: column; justify-content: space-between;
-            border: 1px solid transparent; box-sizing: border-box; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 1px; margin-bottom: 1px; }
-        .player-header input { background: transparent; border: none; color: #fff; font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1px; margin-bottom: 1px; }
+        .player-header input { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
         
-        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid #222; padding: 1px 0; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; }
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; }
         .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; }
@@ -66,22 +77,22 @@
         .btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; padding: 3px 0; font-weight: bold; }
         .num-row { text-align: center; font-size: 11px; font-weight: bold; color: var(--neon-blue); line-height: 1; margin-top: 1px;}
         
-        #sync-status { text-align: center; font-size: 9px; color: #666; padding-bottom: 2px; }
+        #sync-status { text-align: center; font-size: 9px; color: #888; padding-bottom: 2px; }
 
-        /* 📱 スマホ用（縦持ちは非推奨だが対応） */
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
             .control-section { flex: none; width: 100%; max-height: 30%; border-bottom: 1px solid var(--blue); }
             .court-section { grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); overflow-y: auto; }
         }
 
-        /* 💡 プレイヤー一覧画面 */
-        #view-players { flex-direction: column; background: #111; gap: 8px; padding: 8px;}
-        .status-table-container { overflow-x: auto; border: 1px solid #333; border-radius: 4px; }
+        /* 💡 プレイヤー一覧画面の配色も統一 */
+        #view-players { flex-direction: column; background: transparent; gap: 8px; padding: 8px;}
+        .status-table-container { overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; text-align: center; font-size: 11px; }
-        th { background: #222; color: var(--gold); padding: 6px; border: 1px solid #444; }
-        td { background: #000; padding: 4px; border: 1px solid #333; }
-        td input { background: transparent; border: 1px solid #555; color: #fff; text-align: center; width: 50px; padding: 2px; font-size: 11px; }
+        th { background: #1e2127; color: var(--gold); padding: 8px 6px; border: 1px solid rgba(255,255,255,0.1); }
+        td { background: var(--card-bg); padding: 4px; border: 1px solid rgba(255,255,255,0.05); }
+        td input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text); text-align: center; width: 50px; padding: 4px 2px; font-size: 11px; border-radius: 2px; }
+        td input:focus { border-color: var(--neon-blue); outline: none; background: rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
