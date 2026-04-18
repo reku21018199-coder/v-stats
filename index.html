@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.4</title>
+    <title>V-Stats Enterprise | v1.5</title>
     <style>
         :root {
             --court-green: #2d4a22; 
@@ -33,14 +33,14 @@
         .view-section { display: none; height: 100%; width: 100%; padding: 2px; box-sizing: border-box; }
         .view-section.active { display: flex; }
 
-        /* --- ライブ画面：基本設計 --- */
+        /* --- ライブ画面：基本設計（スマホ・PC用ベース） --- */
         .main-container { flex-direction: row; height: 100%; width: 100%; gap: 2px; }
         .court-section { 
             flex: 1; min-width: 0; min-height: 0; background: var(--court-green); 
             border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); 
             display: grid; grid-template-columns: repeat(3, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            gap: 2px; padding: 2px; box-sizing: border-box; overflow-y: auto; /* はみ出した時用にautoに変更 */
+            gap: 2px; padding: 2px; box-sizing: border-box; overflow-y: auto; 
         }
         .control-section { flex: 0 0 150px; display: flex; flex-direction: column; gap: 2px; height: 100%; min-height: 0; }
         .action-panel { flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
@@ -77,7 +77,6 @@
         
         #sync-status { text-align: center; font-size: 9px; color: #888; padding-bottom: 2px; }
 
-        /* 📱 スマホ用レスポンシブレイアウト */
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
             .control-section { flex: none; width: 100%; max-height: 30%; border-bottom: 1px solid var(--blue); }
@@ -85,29 +84,28 @@
         }
 
         /* 💡 ==========================================
-           コンパクト・タブレット用メガUI調整モード (?role=compact_tablet)
-           全体をほんのちょっとだけ（約1.2倍）大きくする
-           配色（ソフトダーク・テーマ）は眩しくない明るさで維持
+           タブレット用 黄金比1.35倍モード (?role=tablet)
+           スクロールなしで全画面に収まりつつ、最大限の押しやすさを確保
            ========================================== */
-        body.compact-tablet-mode .court-section { gap: 4px; padding: 4px; }
-        body.compact-tablet-mode .control-section { flex: 0 0 180px; gap: 4px; }
-        body.compact-tablet-mode .action-panel { gap: 4px; }
-        body.compact-tablet-mode .player-card { padding: 4px 6px; gap: 4px; border-radius: 4px; }
-        body.compact-tablet-mode .player-header { padding-bottom: 2px; margin-bottom: 2px; }
-        body.compact-tablet-mode .player-header input { font-size: 13px; width: 45%; }
-        body.compact-tablet-mode .player-header span { font-size: 12px; }
-        body.compact-tablet-mode .stat-item { gap: 2px; padding: 2px 0; }
-        body.compact-tablet-mode .stat-label { font-size: 11px; scale: 1; }
-        body.compact-tablet-mode .rate-txt { font-size: 11px; scale: 1; }
-        body.compact-tablet-mode .btn-grid { gap: 2px; }
-        body.compact-tablet-mode .btn { font-size: 12px; padding: 6px 0; border-radius: 3px; } /* ボタンを控えめに拡大 */
-        body.compact-tablet-mode .num-row { font-size: 15px; margin-top: 3px; }
-        body.compact-tablet-mode .score-display { font-size: 38px; }
-        body.compact-tablet-mode .small-btn { font-size: 14px; height: 40px; border-radius: 4px; }
-        body.compact-tablet-mode .rot-info { font-size: 20px; padding: 6px; }
-        body.compact-tablet-mode #live-analysis { font-size: 10px; padding: 6px; line-height: 1.4; }
-        body.compact-tablet-mode #action-buttons { height: 35px; gap: 4px; }
-        body.compact-tablet-mode .bench-item { font-size: 14px; padding: 10px; }
+        body.tablet-mode .court-section { gap: 5px; padding: 5px; }
+        body.tablet-mode .control-section { flex: 0 0 200px; gap: 5px; } /* 幅を150px→200pxへ */
+        body.tablet-mode .action-panel { gap: 5px; }
+        body.tablet-mode .player-card { padding: 5px 8px; gap: 5px; border-radius: 5px; }
+        body.tablet-mode .player-header { padding-bottom: 3px; margin-bottom: 3px; }
+        body.tablet-mode .player-header input { font-size: 14px; width: 45%; }
+        body.tablet-mode .player-header span { font-size: 13px; }
+        body.tablet-mode .stat-item { gap: 3px; padding: 3px 0; }
+        body.tablet-mode .stat-label { font-size: 12px; scale: 1; }
+        body.tablet-mode .rate-txt { font-size: 12px; scale: 1; }
+        body.tablet-mode .btn-grid { gap: 3px; }
+        body.tablet-mode .btn { font-size: 14px; padding: 8px 0; border-radius: 4px; } /* ボタン高さを1.35倍へ */
+        body.tablet-mode .num-row { font-size: 16px; margin-top: 4px; }
+        body.tablet-mode .score-display { font-size: 42px; }
+        body.tablet-mode .small-btn { font-size: 16px; height: 44px; border-radius: 5px; }
+        body.tablet-mode .rot-info { font-size: 24px; padding: 8px; }
+        body.tablet-mode #live-analysis { font-size: 12px; padding: 8px; line-height: 1.4; }
+        body.tablet-mode #action-buttons { height: 42px; gap: 5px; }
+        body.tablet-mode .bench-item { font-size: 15px; padding: 12px; }
 
         /* プレイヤー一覧画面 */
         #view-players { flex-direction: column; background: transparent; gap: 8px; padding: 8px;}
@@ -199,9 +197,9 @@
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
     
-    // 💡 URLに ?role=compact_tablet があれば、bodyに専用クラスを追加して全体を1.2倍程度に拡大
-    if (myRole === 'compact_tablet') {
-        document.body.classList.add('compact-tablet-mode');
+    // 💡 URLに ?role=tablet があれば、全体を黄金比の1.35倍に拡大
+    if (myRole === 'tablet') {
+        document.body.classList.add('tablet-mode');
     }
 
     const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
@@ -268,9 +266,9 @@
             card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`;
             let rowsHTML = '';
             
-            // 💡 compact_tablet（控えめ拡大）モードでも、attack/defenseの両プレーを表示
-            if (!myRole || myRole === 'attack' || myRole === 'tablet' || myRole === 'compact_tablet') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
-            if (!myRole || myRole === 'defense' || myRole === 'defence' || myRole === 'tablet' || myRole === 'compact_tablet') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
+            // 💡 tablet（1.35倍）モードでも、attack/defenseの両プレーをそのまま表示
+            if (!myRole || myRole === 'attack' || myRole === 'tablet') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
+            if (!myRole || myRole === 'defense' || myRole === 'defence' || myRole === 'tablet') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
             card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:12px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄 交代</span></div>${rowsHTML}`;
             court.appendChild(card);
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); });
