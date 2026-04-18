@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.6</title>
+    <title>V-Stats Enterprise | v1.7</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -63,7 +63,7 @@
             .court-section { grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); overflow-y: auto; }
         }
 
-        /* 💡 タブレット（1.35倍）とコンパクトタブレット（1.2倍）の対応 */
+        /* 💡 モード対応 (省略せず記述) */
         body.tablet-mode .court-section { gap: 5px; padding: 5px; }
         body.tablet-mode .control-section { flex: 0 0 200px; gap: 5px; } 
         body.tablet-mode .action-panel { gap: 5px; }
@@ -94,7 +94,7 @@
         body.compact-tablet-mode .rot-info { font-size: 20px; padding: 6px; }
 
         /* プレイヤー一覧・試合履歴の共通CSS */
-        #view-players, #view-history { flex-direction: column; background: transparent; gap: 8px; padding: 12px; overflow-y: auto;}
+        #view-players, #view-history, #view-match-detail { flex-direction: column; background: transparent; gap: 8px; padding: 12px; overflow-y: auto;}
         .status-table-container { overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; text-align: center; font-size: 11px; }
         th { background: #1e2127; color: var(--gold); padding: 8px 6px; border: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; }
@@ -102,13 +102,21 @@
         td input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text); text-align: center; width: 50px; padding: 4px 2px; font-size: 11px; border-radius: 2px; }
         td input:focus { border-color: var(--neon-blue); outline: none; background: rgba(0,0,0,0.5); }
 
-        /* 💡 試合履歴カードのCSS */
+        /* 試合履歴カード */
         #history-list-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
-        .history-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; position: relative; }
+        .history-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: background 0.2s; }
+        .history-card:hover { background: #2c3e50; border-color: var(--blue); }
         .history-date { font-size: 11px; color: #888; }
         .history-opponent { font-size: 16px; font-weight: bold; color: var(--neon-blue); margin: 4px 0; }
         .history-score { font-size: 32px; font-weight: bold; color: var(--gold); margin-bottom: 8px; }
-        .del-history-btn { background: var(--red); border: none; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; opacity: 0.8;}
+        .del-history-btn { background: var(--red); border: none; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; position: absolute; bottom: 10px; right: 10px; opacity: 0.8;}
+        
+        /* 💡 スタッツ詳細画面の特有CSS */
+        .detail-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--blue); padding-bottom: 10px; margin-bottom: 10px; }
+        .back-btn { background: #444; border: none; color: #fff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .stat-cell { color: #aaa; font-size: 10px; }
+        .stat-main { color: var(--text); font-size: 12px; font-weight: bold; }
+        .stat-good { color: var(--green); }
     </style>
 </head>
 <body>
@@ -164,9 +172,34 @@
 
     <div id="view-history" class="view-section">
         <h2 style="margin: 0; font-size: 16px; color: var(--neon-blue);">過去の試合一覧</h2>
-        <p style="font-size:11px; color:#aaa; margin:0 0 10px 0;">※ライブ画面で「集計保存」を押したデータがここに並びます。</p>
+        <p style="font-size:11px; color:#aaa; margin:0 0 10px 0;">※カードをクリックすると詳細なスタッツが表示されます。</p>
         <div id="history-list-container">
             </div>
+    </div>
+
+    <div id="view-match-detail" class="view-section">
+        <div class="detail-header">
+            <div>
+                <h2 id="detail-title" style="margin:0; color:var(--gold); font-size:24px;">-</h2>
+                <div id="detail-subtitle" style="font-size:12px; color:#aaa; margin-top:4px;">-</div>
+            </div>
+            <button class="back-btn" onclick="switchView('history')">◀ 戻る</button>
+        </div>
+        <div class="status-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th><th>名前</th>
+                        <th style="border-left:2px solid #555;">スパイク (決/打/ミス)</th>
+                        <th style="border-left:2px solid #555;">レセプション (A,B/受/ミス)</th>
+                        <th style="border-left:2px solid #555;">ブロック (得点)</th>
+                        <th style="border-left:2px solid #555;">サーブ (効果/ミス)</th>
+                    </tr>
+                </thead>
+                <tbody id="detail-stats-tbody">
+                    </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -188,17 +221,14 @@
     const db = getDatabase(app);
     const CURRENT_TEAM_ID = "fit_v_reku";
     
-    // 💡 履歴用のデータベース接続を追加
     const gameRef = ref(db, `teams/${CURRENT_TEAM_ID}/live_game`);
     const statusRef = ref(db, `teams/${CURRENT_TEAM_ID}/players_status`);
     const historyRef = ref(db, `teams/${CURRENT_TEAM_ID}/matches_history`);
 
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
-    
     if (myRole === 'tablet') document.body.classList.add('tablet-mode');
     if (myRole === 'compact_tablet') document.body.classList.add('compact-tablet-mode');
-
     const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
     if (isSpecialRole) {
         document.getElementById('live-analysis').style.display = 'none';
@@ -215,7 +245,7 @@
 
     let players, courtIds, score, currentRot, serveRights, rotStats, history = [], swapSourceId = null;
     let playersStatus = [];
-    let savedMatches = {}; // 💡 履歴データ格納用
+    let savedMatches = {}; 
 
     window.toggleMenu = () => { document.getElementById('side-menu').classList.toggle('open'); };
     window.switchView = (viewId) => {
@@ -223,7 +253,7 @@
         document.getElementById(`view-${viewId}`).classList.add('active');
         document.getElementById('side-menu').classList.remove('open');
         if(viewId === 'players') renderStatusTable();
-        if(viewId === 'history') renderHistoryView(); // 💡 履歴画面を開いたら描画
+        if(viewId === 'history') renderHistoryView(); 
     };
 
     onValue(gameRef, (snapshot) => {
@@ -234,16 +264,8 @@
         if(!isSpecialRole) updateAnalysis();
     });
 
-    onValue(statusRef, (snapshot) => {
-        playersStatus = snapshot.val() || defaultStatus;
-        if(document.getElementById('view-players').classList.contains('active')) renderStatusTable();
-    });
-
-    // 💡 履歴データの同期処理
-    onValue(historyRef, (snapshot) => {
-        savedMatches = snapshot.val() || {};
-        if(document.getElementById('view-history').classList.contains('active')) renderHistoryView();
-    });
+    onValue(statusRef, (snapshot) => { playersStatus = snapshot.val() || defaultStatus; if(document.getElementById('view-players').classList.contains('active')) renderStatusTable(); });
+    onValue(historyRef, (snapshot) => { savedMatches = snapshot.val() || {}; if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); });
 
     function save() { set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats }); }
     window.saveStatus = (pid, field, value) => { playersStatus[pid][field] = value; set(statusRef, playersStatus); };
@@ -263,39 +285,82 @@
         });
     }
 
-    // 💡 試合履歴カードの描画関数
+    // 💡 履歴カードに onclick="showMatchDetail(...)" を追加
     function renderHistoryView() {
         const container = document.getElementById('history-list-container');
         container.innerHTML = '';
-        
-        // 新しい試合が上に来るようにID(タイムスタンプ)で降順ソート
         const matchIds = Object.keys(savedMatches).sort((a, b) => b - a);
-        
-        if (matchIds.length === 0) {
-            container.innerHTML = '<p style="color:#666; font-size:12px;">保存された試合データはありません。</p>';
-            return;
-        }
+        if (matchIds.length === 0) { container.innerHTML = '<p style="color:#666; font-size:12px;">保存された試合データはありません。</p>'; return; }
 
         matchIds.forEach(id => {
             const m = savedMatches[id];
             const div = document.createElement('div');
             div.className = 'history-card';
+            // クリックで詳細画面へ飛ぶように設定
+            div.onclick = () => showMatchDetail(id);
             div.innerHTML = `
                 <div class="history-date">${m.date}</div>
                 <div class="history-opponent">vs ${m.opponent}</div>
                 <div class="history-score">${m.score.us} - ${m.score.them}</div>
-                <button class="del-history-btn" onclick="deleteHistory('${id}')">削除</button>
+                <button class="del-history-btn" onclick="event.stopPropagation(); deleteHistory('${id}')">削除</button>
             `;
             container.appendChild(div);
         });
     }
 
-    // 💡 履歴の削除関数
-    window.deleteHistory = (matchId) => {
-        if(confirm("この試合履歴を完全に削除しますか？")) {
-            set(ref(db, `teams/${CURRENT_TEAM_ID}/matches_history/${matchId}`), null);
-        }
-    }
+    // 💡 試合詳細画面を描画する新機能！
+    window.showMatchDetail = (matchId) => {
+        const m = savedMatches[matchId];
+        if(!m || !m.players) return;
+
+        document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`;
+        document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
+
+        const tbody = document.getElementById('detail-stats-tbody');
+        tbody.innerHTML = '';
+
+        m.players.forEach(p => {
+            // 計算ロジック
+            const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
+            const spkRate = spkTotal > 0 ? ((p.spike.ex - p.spike.miss) / spkTotal * 100).toFixed(0) : 0;
+            
+            const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
+            const recRate = recTotal > 0 ? ((p.rec.a * 100 + p.rec.b * 50) / recTotal).toFixed(0) : 0;
+
+            // プレーに参加していない（全スタッツが0の）選手は非表示にする
+            if(spkTotal === 0 && recTotal === 0 && p.block.ex === 0 && (p.serve.ex + p.serve.ok + p.serve.bad + p.serve.miss) === 0 && (p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss) === 0) return;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td>
+                
+                <td style="border-left:2px solid #555;">
+                    <span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span> 
+                    <span class="stat-cell">(${p.spike.ex}決 / ${spkTotal}打 / ${p.spike.miss}ミ)</span>
+                </td>
+                
+                <td style="border-left:2px solid #555;">
+                    <span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span> 
+                    <span class="stat-cell">(${p.rec.a},${p.rec.b} / ${recTotal}受 / ${p.rec.miss}ミ)</span>
+                </td>
+                
+                <td style="border-left:2px solid #555;">
+                    <span class="stat-main stat-good">${p.block.ex}</span> <span class="stat-cell">得点</span>
+                </td>
+
+                <td style="border-left:2px solid #555;">
+                    <span class="stat-main stat-good">${p.serve.ex}</span> 
+                    <span class="stat-cell">効 / ${p.serve.miss} ミ</span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // 画面切り替え
+        switchView('match-detail');
+    };
+
+    window.deleteHistory = (matchId) => { if(confirm("この試合履歴を完全に削除しますか？")) { set(ref(db, `teams/${CURRENT_TEAM_ID}/matches_history/${matchId}`), null); } }
 
     function render() {
         const court = document.getElementById('court'); court.innerHTML = '';
@@ -304,7 +369,6 @@
             const card = document.createElement('div');
             card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`;
             let rowsHTML = '';
-            
             if (!myRole || myRole === 'attack' || myRole === 'tablet' || myRole === 'compact_tablet') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
             if (!myRole || myRole === 'defense' || myRole === 'defence' || myRole === 'tablet' || myRole === 'compact_tablet') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
             card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:12px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄 交代</span></div>${rowsHTML}`;
@@ -328,25 +392,12 @@
     window.handleSwap = (id) => { if(swapSourceId === null) { swapSourceId = id; if(!courtIds.includes(id)) window.toggleBench(); render(); } else { const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); if(idxS!==-1 && idxT!==-1) [courtIds[idxS], courtIds[idxT]] = [courtIds[idxT], courtIds[idxS]]; else if(idxS!==-1) courtIds[idxS]=id; else if(idxT!==-1) courtIds[idxT]=swapSourceId; swapSourceId=null; document.getElementById('bench-list').style.display='none'; save(); } };
     window.undo = () => { if(!history.length) return; const last = history.pop(); if(last.type==='stat') players[last.pid][last.cat][last.key]--; else { score[last.side]-=last.val; if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; } if(last.rotated) { courtIds=[courtIds[5],courtIds[0],courtIds[1],courtIds[2],courtIds[3],courtIds[4]]; currentRot=currentRot===1?6:currentRot-1; } serveRights = last.pRights; } save(); };
     
-    // 💡 試合終了（保存＆初期化）ロジック
     window.finishGame = () => { 
         if(confirm("この試合のデータを履歴に保存し、ボードを初期化しますか？")) { 
             const opponentName = prompt("対戦相手のチーム名を入力してください", "練習試合") || "不明";
-            const matchId = Date.now(); // 1970年からのミリ秒をIDにする（被らない一意のID）
-            
-            const matchData = {
-                date: new Date().toLocaleString('ja-JP'), // 今の日付と時間
-                opponent: opponentName,
-                score: score,
-                players: players, // この試合の各選手のスタッツを丸ごと保存！
-                rotStats: rotStats
-            };
-            
-            // 履歴データベースに保存
-            set(ref(db, `teams/${CURRENT_TEAM_ID}/matches_history/${matchId}`), matchData).then(() => {
-                // 保存が成功したら、ライブ画面を初期状態に戻す
-                set(gameRef, defaultData);
-            });
+            const matchId = Date.now(); 
+            const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, rotStats: rotStats };
+            set(ref(db, `teams/${CURRENT_TEAM_ID}/matches_history/${matchId}`), matchData).then(() => { set(gameRef, defaultData); });
         } 
     };
 
