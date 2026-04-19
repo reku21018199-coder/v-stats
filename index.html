@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.10.0</title>
+    <title>V-Stats Enterprise | v1.10.1</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -54,11 +54,22 @@
         
         .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; transition: background 0.2s ease;}
         
-        /* 💡 ローテーション連動ハイライトのCSS */
-        .hint-highlight { background: rgba(92, 182, 255, 0.08); box-shadow: inset 2px 0 0 var(--neon-blue); border-radius: 0 2px 2px 0; padding-left: 2px;}
+        /* 💡 ローテーション連動ハイライトのCSS（強調版） */
+        .hint-highlight { 
+            background: rgba(92, 182, 255, 0.15); /* 背景色を少し濃く */
+            box-shadow: inset 3px 0 0 var(--neon-blue); /* 左のラインを太く */
+            border-radius: 0 2px 2px 0; 
+            padding-left: 3px;
+        }
+        
+        /* 💡 ハイライトされた項目のラベル（テキスト）を緑色＆強調 */
+        .hint-highlight .stat-label {
+            color: var(--green);
+            font-size: 10px; /* 少し大きく */
+        }
 
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
-        .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; }
+        .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; transition: all 0.2s ease;}
         .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; }
         
         .btn-grid, .num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
@@ -84,6 +95,8 @@
         body.tablet-mode .player-header input { font-size: 14px; width: 45%; }
         body.tablet-mode .stat-item { gap: 3px; padding: 3px 0; }
         body.tablet-mode .stat-label, body.tablet-mode .rate-txt { font-size: 12px; }
+        /* 💡 タブレットモード時のハイライト文字サイズも調整 */
+        body.tablet-mode .hint-highlight .stat-label { font-size: 13px; }
         body.tablet-mode .btn-grid { gap: 3px; }
         body.tablet-mode .btn { font-size: 14px; padding: 8px 0; border-radius: 4px; }
         body.tablet-mode .num-row { font-size: 16px; margin-top: 4px; }
@@ -99,6 +112,8 @@
         body.compact-tablet-mode .player-header input { font-size: 13px; }
         body.compact-tablet-mode .stat-item { gap: 2px; padding: 2px 0; }
         body.compact-tablet-mode .stat-label, body.compact-tablet-mode .rate-txt { font-size: 11px; }
+        /* 💡 コンパクトタブレットモード時のハイライト文字サイズ */
+        body.compact-tablet-mode .hint-highlight .stat-label { font-size: 12px; }
         body.compact-tablet-mode .btn { font-size: 12px; padding: 6px 0; border-radius: 3px; }
         body.compact-tablet-mode .num-row { font-size: 15px; margin-top: 3px; }
         body.compact-tablet-mode .score-display { font-size: 38px; }
@@ -273,7 +288,6 @@
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
 
-    // 💡 Helper for stats calculation (used in live and history to ensure exact match)
     const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
 
@@ -385,7 +399,6 @@
         m.players.forEach(p => {
             const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
             const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
-            // 💡 履歴画面の計算をライブ画面の関数（getEff, getRecRate）と完全一致させる
             const spkRate = getEff(p.spike);
             const recRate = getRecRate(p.rec);
             
@@ -402,26 +415,22 @@
     function render() {
         const court = document.getElementById('court'); court.innerHTML = '';
         
-        // 💡 画面上の表示順 (3:前衛左, 2:前衛中, 1:前衛右, 4:後衛左, 5:後衛中, 0:後衛右=サーバー)
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const p = players[courtIds[idx]];
             
-            // 💡 位置に応じたハイライト条件の判定
-            const isFront = (idx === 1 || idx === 2 || idx === 3); // 前衛
-            const isBack = (idx === 4 || idx === 5 || idx === 0);  // 後衛
-            const isServer = (idx === 0);                          // サーバー（後衛右）
+            const isFront = (idx === 1 || idx === 2 || idx === 3); 
+            const isBack = (idx === 4 || idx === 5 || idx === 0);  
+            const isServer = (idx === 0);                          
 
             const card = document.createElement('div'); card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`; card.id = `card-${p.id}`; 
             let rowsHTML = '';
             
-            // 💡 1.項目の順番を再編成＆日本語化 
-            // 💡 2.ポジションに応じたハイライト(isFront, isBack, etc)を付与
+            // 💡 項目の順番を変更：スパイク → ブロック → レセプション → ディグ → サーブ
             if (showAttack) { 
                 rowsHTML += createRow(p.id, 'スパイク', 'spike', ['◎','○','△','×'], isFront); 
                 rowsHTML += createRow(p.id, 'ブロック', 'block', ['◎','○','△','×'], isFront); 
             }
             if (showDefense) { 
-                // レセプションはコートにいる限り常にハイライト
                 rowsHTML += createRow(p.id, 'レセプション', 'rec', ['A','B','C','×'], true); 
                 rowsHTML += createRow(p.id, 'ディグ', 'dig', ['◎','○','△','×'], isBack); 
                 rowsHTML += createRow(p.id, 'サーブ', 'serve', ['◎','○','△','×'], isServer); 
@@ -443,7 +452,6 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; document.getElementById('current-rot').innerText = currentRot;
     }
 
-    // 💡 ハイライトフラグ(isHighlighted)を受け取るように関数を拡張
     function createRow(pid, label, cat, btns, isHighlighted = false) {
         const s = players[pid][cat]; const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
         const highlightClass = isHighlighted ? 'hint-highlight' : '';
@@ -475,7 +483,6 @@
     window.toggleBench = () => { const l = document.getElementById('bench-list'); l.style.display = l.style.display==='block'?'none':'block'; };
     const updateAnalysis = () => { const ana = document.getElementById('live-analysis'); if (!rotStats || rotStats.length < 7) return; const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d); const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0]; ana.innerHTML = `<b>【分析】</b><br>最高R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>最弱R: S${sortedRot[5].i} (${sortedRot[5].d})<br>得点王: #${bestSpiker.no} ${bestSpiker.name}`; };
 
-    // 💡 キーボードコマンド監視ロジック
     window.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -488,7 +495,7 @@
                 cmdState.category = null;
                 const p = players.find(p => p.id === cmdState.playerId);
                 if (p) {
-                    cmdText.innerHTML = `<span class="cmd-highlight">#${p.no} ${p.name}</span> : 項目(r/s/a/d/b)を選択`;
+                    cmdText.innerHTML = `<span class="cmd-highlight">#${p.no} ${p.name}</span> : 項目(a/b/r/d/s)を選択`;
                     updateCmdUI();
                 } else {
                     resetCmd();
@@ -511,7 +518,7 @@
                 const targetPlayer = players.find(p => p.no.toString() === parseInt(cmdState.numStr).toString());
                 if (targetPlayer) {
                     cmdState.playerId = targetPlayer.id;
-                    cmdText.innerHTML = `<span class="cmd-highlight">#${targetPlayer.no} ${targetPlayer.name}</span> : 項目(r/s/a/d/b)を選択`;
+                    cmdText.innerHTML = `<span class="cmd-highlight">#${targetPlayer.no} ${targetPlayer.name}</span> : 項目(a/b/r/d/s)を選択`;
                     updateCmdUI();
                 } else {
                     cmdText.innerHTML = `該当なし`;
@@ -522,9 +529,8 @@
         }
 
         if (cmdState.playerId !== null && !cmdState.category) {
-            const catMap = { 'r':'rec', 's':'serve', 'a':'spike', 'd':'dig', 'b':'block' };
-            // 💡 コマンドモニター用の日本語表記も更新
-            const catNameMap = { 'r':'レセプション', 's':'サーブ', 'a':'スパイク', 'd':'ディグ', 'b':'ブロック' };
+            const catMap = { 'a':'spike', 'b':'block', 'r':'rec', 'd':'dig', 's':'serve' };
+            const catNameMap = { 'a':'スパイク', 'b':'ブロック', 'r':'レセプション', 'd':'ディグ', 's':'サーブ' };
             
             if (catMap[key]) {
                 const rowExists = document.getElementById(`row-${cmdState.playerId}-${catMap[key]}`);
