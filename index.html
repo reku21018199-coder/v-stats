@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.8.2</title>
+    <title>V-Stats Enterprise | v1.9.0</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -33,8 +33,12 @@
         #bench-list { display: none; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); max-height: 150px; overflow-y: auto; border-radius: 4px; }
         .bench-item { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: bold; text-align: center; color: var(--text); cursor:pointer;}
         
+        /* 💡 UIハイライト（既存のスワップ用と、新しいコマンド入力用） */
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px rgba(92, 182, 255, 0.5); }
         .selected-swap-bench { background: #0d47a1 !important; border-color: var(--neon-blue) !important; color: #fff !important; box-shadow: inset 0 0 10px rgba(92, 182, 255, 0.5); }
+        
+        .cmd-active-card { border-color: var(--gold) !important; box-shadow: 0 0 15px rgba(229, 181, 103, 0.8) !important; transform: scale(1.02); transition: all 0.2s ease; z-index: 10;}
+        .cmd-active-row { background: rgba(229, 181, 103, 0.2); border-radius: 4px; }
 
         .score-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px; text-align: center; }
         .score-display { font-size: 28px; font-weight: bold; color: var(--gold); line-height: 1; }
@@ -45,11 +49,11 @@
         #live-analysis { flex: 1; background: rgba(0,0,0,0.3); border-top: 1px solid var(--blue); font-size: 9px; padding: 4px; color: var(--neon-blue); overflow-y: auto; }
         #action-buttons { display: flex; gap: 2px; height: 30px; }
 
-        .player-card { background: var(--card-bg); border-radius: 3px; padding: 2px 4px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .player-card { background: var(--card-bg); border-radius: 3px; padding: 2px 4px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative;}
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1px; margin-bottom: 1px; }
         .player-header input { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
         
-        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; transition: background 0.2s ease;}
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; }
         .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; }
@@ -59,13 +63,17 @@
         .num-row { text-align: center; font-size: 11px; font-weight: bold; color: var(--neon-blue); line-height: 1; margin-top: 1px;}
         #sync-status { text-align: center; font-size: 9px; color: #888; padding-bottom: 2px; }
 
+        /* 💡 コマンドモニター */
+        #cmd-monitor { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 1px solid var(--gold); color: var(--text); padding: 6px 15px; border-radius: 20px; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+        .cmd-highlight { color: var(--gold); font-size: 16px; }
+
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
             .control-section { flex: none; width: 100%; max-height: 30%; border-bottom: 1px solid var(--blue); }
             .court-section { grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); overflow-y: auto; }
         }
 
-        /* 💡 モード対応 */
+        /* モード対応 */
         body.tablet-mode .court-section { gap: 5px; padding: 5px; }
         body.tablet-mode .control-section { flex: 0 0 200px; gap: 5px; } 
         body.tablet-mode .action-panel { gap: 5px; }
@@ -137,6 +145,8 @@
         <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none;">📊 試合履歴アーカイブ</div>
         <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: auto; color: var(--gold);">🏢 チーム管理 / 切替</div>
     </div>
+
+    <div id="cmd-monitor">⌨️ <span id="cmd-text">待機中</span></div>
 
     <div id="view-teams" class="view-section active">
         <h2 style="margin: 0; font-size: 16px; color: var(--neon-blue);">チーム管理 / ログイン</h2>
@@ -236,14 +246,12 @@
     let gameRef, statusRef, historyRef;
     let teamsRegistry = {};
 
-    // 💡 URLからロール（役割）を読み取り、変数を整理
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
     
     if (myRole && myRole.startsWith('tablet')) document.body.classList.add('tablet-mode');
     if (myRole === 'compact_tablet') document.body.classList.add('compact-tablet-mode');
 
-    // 攻撃と守備それぞれの表示フラグを設定
     const isAttackRole = (myRole === 'attack' || myRole === 'tablet-attack');
     const isDefenseRole = (myRole === 'defense' || myRole === 'defence' || myRole === 'tablet-defense' || myRole === 'tablet-defence');
     const isSpecialRole = (isAttackRole || isDefenseRole);
@@ -251,7 +259,6 @@
     const showAttack = (!myRole || isAttackRole || myRole === 'tablet' || myRole === 'compact_tablet');
     const showDefense = (!myRole || isDefenseRole || myRole === 'tablet' || myRole === 'compact_tablet');
 
-    // 特定ロール時のUI隠蔽処理
     if (isSpecialRole) {
         document.getElementById('live-analysis').style.display = 'none';
         const actionBtns = document.getElementById('action-buttons');
@@ -262,6 +269,9 @@
     let players, courtIds, score, currentRot, serveRights, rotStats, history = [], swapSourceId = null;
     let playersStatus = [];
     let savedMatches = {}; 
+
+    // 💡 キーボードコマンド用の状態管理
+    let cmdState = { numStr: "", playerId: null, category: null };
 
     const registryRef = ref(db, 'teams_registry');
     onValue(registryRef, (snapshot) => {
@@ -282,103 +292,61 @@
     window.loginTeam = (teamId) => {
         const pass = prompt(`${teamsRegistry[teamId].name} のパスワードを入力してください`);
         if(pass === teamsRegistry[teamId].pass) {
-            currentTeamId = teamId;
-            currentTeamName = teamsRegistry[teamId].name;
-            localStorage.setItem('vstats_team_id', teamId);
-            localStorage.setItem('vstats_team_name', currentTeamName);
-            
+            currentTeamId = teamId; currentTeamName = teamsRegistry[teamId].name;
+            localStorage.setItem('vstats_team_id', teamId); localStorage.setItem('vstats_team_name', currentTeamName);
             document.getElementById('display-team-name').innerText = currentTeamName;
-            document.getElementById('menu-live').style.display = 'block';
-            document.getElementById('menu-players').style.display = 'block';
-            document.getElementById('menu-history').style.display = 'block';
-            
-            attachFirebaseListeners(teamId);
-            switchView('live');
-        } else {
-            alert('パスワードが違います');
-        }
+            document.getElementById('menu-live').style.display = 'block'; document.getElementById('menu-players').style.display = 'block'; document.getElementById('menu-history').style.display = 'block';
+            attachFirebaseListeners(teamId); switchView('live');
+        } else alert('パスワードが違います');
     };
 
     window.createTeam = () => {
-        const name = document.getElementById('new-team-name').value.trim();
-        const pass = document.getElementById('new-team-pass').value.trim();
+        const name = document.getElementById('new-team-name').value.trim(); const pass = document.getElementById('new-team-pass').value.trim();
         if(!name || !pass) return alert('チーム名とパスワードを入力してください');
-        
-        const teamId = 'team_' + Date.now();
-        set(ref(db, `teams_registry/${teamId}`), { name, pass });
-
+        const teamId = 'team_' + Date.now(); set(ref(db, `teams_registry/${teamId}`), { name, pass });
         let initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
-        
         if (name === "福岡工業大学") {
-            initPlayers[0] = { ...initPlayers[0], no: 23, name: "黒木廉" };
-            initPlayers[1] = { ...initPlayers[1], no: 4, name: "藤野悠歩" };
-            initPlayers[2] = { ...initPlayers[2], no: 1, name: "平嶋璃音" };
-            initPlayers[3] = { ...initPlayers[3], no: 2, name: "田中恥真" };
-            initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" };
-            initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
+            initPlayers[0] = { ...initPlayers[0], no: 23, name: "黒木廉" }; initPlayers[1] = { ...initPlayers[1], no: 4, name: "藤野悠歩" };
+            initPlayers[2] = { ...initPlayers[2], no: 1, name: "平嶋璃音" }; initPlayers[3] = { ...initPlayers[3], no: 2, name: "田中恥真" };
+            initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" }; initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
         }
-
         const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], score: {us:0, them:0}, currentRot: 1, serveRights: 'us', rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
         set(ref(db, `teams/${teamId}/live_game`), defaultData);
-        
-        document.getElementById('new-team-name').value = '';
-        document.getElementById('new-team-pass').value = '';
+        document.getElementById('new-team-name').value = ''; document.getElementById('new-team-pass').value = '';
         alert(`${name} を作成しました！一覧からログインしてください。`);
     };
 
     window.deleteTeam = (teamId) => {
         const pass = prompt(`【警告】データは完全に消去されます。\n削除するには ${teamsRegistry[teamId].name} のパスワードを入力してください`);
         if(pass === teamsRegistry[teamId].pass) {
-            set(ref(db, `teams_registry/${teamId}`), null);
-            set(ref(db, `teams/${teamId}`), null);
+            set(ref(db, `teams_registry/${teamId}`), null); set(ref(db, `teams/${teamId}`), null);
             if(currentTeamId === teamId) {
-                currentTeamId = null;
-                localStorage.removeItem('vstats_team_id');
-                document.getElementById('display-team-name').innerText = "チーム未選択";
-                document.getElementById('menu-live').style.display = 'none';
-                document.getElementById('menu-players').style.display = 'none';
-                document.getElementById('menu-history').style.display = 'none';
+                currentTeamId = null; localStorage.removeItem('vstats_team_id'); document.getElementById('display-team-name').innerText = "チーム未選択";
+                document.getElementById('menu-live').style.display = 'none'; document.getElementById('menu-players').style.display = 'none'; document.getElementById('menu-history').style.display = 'none';
             }
             alert('チームを削除しました');
-        } else if (pass !== null) {
-            alert('パスワードが違います');
-        }
+        } else if (pass !== null) alert('パスワードが違います');
     };
 
     function renderTeamsView() {
-        const container = document.getElementById('team-list-container');
-        container.innerHTML = '';
+        const container = document.getElementById('team-list-container'); container.innerHTML = '';
         for (const [id, data] of Object.entries(teamsRegistry)) {
-            const div = document.createElement('div');
-            div.className = 'team-list-item';
-            div.innerHTML = `
-                <div style="font-size:16px; font-weight:bold; color:white;">${data.name}</div>
-                <div class="team-list-actions">
-                    <button class="login-btn" onclick="loginTeam('${id}')">ログイン</button>
-                    <button class="del-team-btn" onclick="deleteTeam('${id}')">削除</button>
-                </div>
-            `;
+            const div = document.createElement('div'); div.className = 'team-list-item';
+            div.innerHTML = `<div style="font-size:16px; font-weight:bold; color:white;">${data.name}</div><div class="team-list-actions"><button class="login-btn" onclick="loginTeam('${id}')">ログイン</button><button class="del-team-btn" onclick="deleteTeam('${id}')">削除</button></div>`;
             container.appendChild(div);
         }
     }
 
     function attachFirebaseListeners(teamId) {
-        if(gameRef) off(gameRef);
-        if(statusRef) off(statusRef);
-        if(historyRef) off(historyRef);
-
-        gameRef = ref(db, `teams/${teamId}/live_game`);
-        statusRef = ref(db, `teams/${teamId}/players_status`);
-        historyRef = ref(db, `teams/${teamId}/matches_history`);
-
+        if(gameRef) off(gameRef); if(statusRef) off(statusRef); if(historyRef) off(historyRef);
+        gameRef = ref(db, `teams/${teamId}/live_game`); statusRef = ref(db, `teams/${teamId}/players_status`); historyRef = ref(db, `teams/${teamId}/matches_history`);
         onValue(gameRef, (snapshot) => {
             if(!snapshot.exists()) return;
             const data = snapshot.val();
             players = data.players; courtIds = data.courtIds; score = data.score; currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats;
-            if(document.getElementById('view-live').classList.contains('active')) render(); 
+            if(document.getElementById('view-live').classList.contains('active')) { render(); updateCmdUI(); } 
             if(!isSpecialRole) updateAnalysis();
         });
-
         onValue(statusRef, (snapshot) => { playersStatus = snapshot.val() || Array.from({length: 15}, (_, i) => ({ id: i, height: "", reach: "", serve_speed: "", spike_speed: "" })); if(document.getElementById('view-players').classList.contains('active')) renderStatusTable(); });
         onValue(historyRef, (snapshot) => { savedMatches = snapshot.val() || {}; if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); });
     }
@@ -389,13 +357,8 @@
     function renderStatusTable() {
         const tbody = document.getElementById('player-status-tbody'); tbody.innerHTML = '';
         players.forEach(p => {
-            const stat = playersStatus[p.id] || { height: "", reach: "", serve_speed: "", spike_speed: "" };
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td>
-                <td><input type="number" value="${stat.height}" onchange="saveStatus(${p.id}, 'height', this.value)"></td>
-                <td><input type="number" value="${stat.reach}" onchange="saveStatus(${p.id}, 'reach', this.value)"></td>
-                <td><input type="number" value="${stat.serve_speed}" onchange="saveStatus(${p.id}, 'serve_speed', this.value)"></td>
-                <td><input type="number" value="${stat.spike_speed}" onchange="saveStatus(${p.id}, 'spike_speed', this.value)"></td>`;
+            const stat = playersStatus[p.id] || { height: "", reach: "", serve_speed: "", spike_speed: "" }; const tr = document.createElement('tr');
+            tr.innerHTML = `<td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td><td><input type="number" value="${stat.height}" onchange="saveStatus(${p.id}, 'height', this.value)"></td><td><input type="number" value="${stat.reach}" onchange="saveStatus(${p.id}, 'reach', this.value)"></td><td><input type="number" value="${stat.serve_speed}" onchange="saveStatus(${p.id}, 'serve_speed', this.value)"></td><td><input type="number" value="${stat.spike_speed}" onchange="saveStatus(${p.id}, 'spike_speed', this.value)"></td>`;
             tbody.appendChild(tr);
         });
     }
@@ -405,8 +368,7 @@
         const matchIds = Object.keys(savedMatches).sort((a, b) => b - a);
         if (matchIds.length === 0) { container.innerHTML = '<p style="color:#666; font-size:12px;">保存された試合データはありません。</p>'; return; }
         matchIds.forEach(id => {
-            const m = savedMatches[id];
-            const div = document.createElement('div'); div.className = 'history-card'; div.onclick = () => showMatchDetail(id);
+            const m = savedMatches[id]; const div = document.createElement('div'); div.className = 'history-card'; div.onclick = () => showMatchDetail(id);
             div.innerHTML = `<div class="history-date">${m.date}</div><div class="history-opponent">vs ${m.opponent}</div><div class="history-score">${m.score.us} - ${m.score.them}</div><button class="del-history-btn" onclick="event.stopPropagation(); deleteHistory('${id}')">削除</button>`;
             container.appendChild(div);
         });
@@ -414,14 +376,11 @@
 
     window.showMatchDetail = (matchId) => {
         const m = savedMatches[matchId]; if(!m || !m.players) return;
-        document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`;
-        document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
+        document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
         const tbody = document.getElementById('detail-stats-tbody'); tbody.innerHTML = '';
         m.players.forEach(p => {
-            const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
-            const spkRate = spkTotal > 0 ? ((p.spike.ex - p.spike.miss) / spkTotal * 100).toFixed(0) : 0;
-            const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
-            const recRate = recTotal > 0 ? ((p.rec.a * 100 + p.rec.b * 50) / recTotal).toFixed(0) : 0;
+            const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss; const spkRate = spkTotal > 0 ? ((p.spike.ex - p.spike.miss) / spkTotal * 100).toFixed(0) : 0;
+            const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss; const recRate = recTotal > 0 ? ((p.rec.a * 100 + p.rec.b * 50) / recTotal).toFixed(0) : 0;
             if(spkTotal === 0 && recTotal === 0 && p.block.ex === 0 && (p.serve.ex + p.serve.ok + p.serve.bad + p.serve.miss) === 0 && (p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss) === 0) return;
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td><td style="border-left:2px solid #555;"><span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span> <span class="stat-cell">(${p.spike.ex}/${spkTotal}/${p.spike.miss})</span></td><td style="border-left:2px solid #555;"><span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span> <span class="stat-cell">(${p.rec.a},${p.rec.b}/${recTotal}/${p.rec.miss})</span></td><td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.block.ex}</span></td><td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.serve.ex}</span></td>`;
@@ -436,9 +395,10 @@
         const court = document.getElementById('court'); court.innerHTML = '';
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const p = players[courtIds[idx]];
-            const card = document.createElement('div'); card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`; let rowsHTML = '';
+            // 💡 カード自体にIDを付与（コマンド用）
+            const card = document.createElement('div'); card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`; card.id = `card-${p.id}`; 
+            let rowsHTML = '';
             
-            // 💡 rolesに応じた表示制限
             if (showAttack) { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
             if (showDefense) { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
             
@@ -458,29 +418,19 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; document.getElementById('current-rot').innerText = currentRot;
     }
 
+    // 💡 行(Row)にもIDを付与（コマンド用）
     function createRow(pid, label, cat, btns) {
         const s = players[pid][cat]; const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
-        return `<div class="stat-item"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+        return `<div class="stat-item" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
     window.record = (pid, cat, type) => { const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type; players[pid][cat][key]++; history.push({type:'stat', pid, cat, key}); save(); };
     window.modifyScore = (side, val) => { let rotated = false; let pRights = serveRights; if(side==='us' && val>0 && serveRights==='them') { courtIds=[courtIds[1],courtIds[2],courtIds[3],courtIds[4],courtIds[5],courtIds[0]]; currentRot=currentRot===6?1:currentRot+1; serveRights='us'; rotated=true; } else if(side==='them' && val>0) serveRights='them'; score[side]+=val; if(val>0) { if(side==='us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; } history.push({type:'score', side, val, rotated, pRights}); save(); };
     
-    // 💡 控え選手の自動閉じ機能を削除（もう一度ボタンを押すまで閉じない）
     window.handleSwap = (id) => { 
-        if(swapSourceId === null) { 
-            swapSourceId = id; 
-            render(); 
-        } else { 
-            const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); 
-            if(idxS!==-1 && idxT!==-1) [courtIds[idxS], courtIds[idxT]] = [courtIds[idxT], courtIds[idxS]]; 
-            else if(idxS!==-1) courtIds[idxS]=id; 
-            else if(idxT!==-1) courtIds[idxT]=swapSourceId; 
-            swapSourceId=null; 
-            save(); 
-        } 
+        if(swapSourceId === null) { swapSourceId = id; render(); } 
+        else { const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); if(idxS!==-1 && idxT!==-1) [courtIds[idxS], courtIds[idxT]] = [courtIds[idxT], courtIds[idxS]]; else if(idxS!==-1) courtIds[idxS]=id; else if(idxT!==-1) courtIds[idxT]=swapSourceId; swapSourceId=null; save(); } 
     };
-    
     window.undo = () => { if(!history.length) return; const last = history.pop(); if(last.type==='stat') players[last.pid][last.cat][last.key]--; else { score[last.side]-=last.val; if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; } if(last.rotated) { courtIds=[courtIds[5],courtIds[0],courtIds[1],courtIds[2],courtIds[3],courtIds[4]]; currentRot=currentRot===1?6:currentRot-1; } serveRights = last.pRights; } save(); };
     
     window.finishGame = () => { 
@@ -500,6 +450,108 @@
     const updateAnalysis = () => { const ana = document.getElementById('live-analysis'); if (!rotStats || rotStats.length < 7) return; const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d); const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0]; ana.innerHTML = `<b>【分析】</b><br>最高R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>最弱R: S${sortedRot[5].i} (${sortedRot[5].d})<br>得点王: #${bestSpiker.no} ${bestSpiker.name}`; };
     const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
+
+    // 💡 ========================================================
+    // キーボードコマンド監視ロジック
+    // ========================================================
+    window.addEventListener('keydown', (e) => {
+        // 名前や身長など、テキストボックスに入力中はコマンドを無効化
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        const key = e.key.toLowerCase();
+        const cmdMonitor = document.getElementById('cmd-monitor');
+        const cmdText = document.getElementById('cmd-text');
+
+        // Escキーで強制キャンセル
+        if (key === 'escape') { resetCmd(); return; }
+
+        // ① スコアのダイレクト入力
+        if (key === 'i') { modifyScore('us', 1); resetCmd(); return; }
+        if (key === 'o') { modifyScore('them', 1); resetCmd(); return; }
+
+        // ② 背番号入力（ステップ1）
+        if (!cmdState.category && !isNaN(parseInt(key)) && key !== ' ') {
+            cmdState.numStr += key;
+            cmdMonitor.style.display = 'block';
+            cmdText.innerHTML = `選手 <span class="cmd-highlight">#${cmdState.numStr}</span> を検索中...`;
+            
+            if (cmdState.numStr.length === 2) {
+                // 選手を検索
+                const targetPlayer = players.find(p => p.no.toString() === parseInt(cmdState.numStr).toString());
+                if (targetPlayer) {
+                    cmdState.playerId = targetPlayer.id;
+                    cmdText.innerHTML = `<span class="cmd-highlight">#${targetPlayer.no} ${targetPlayer.name}</span> : 項目(r/s/a/d/b)を選択`;
+                    updateCmdUI();
+                } else {
+                    cmdText.innerHTML = `該当なし`;
+                    setTimeout(resetCmd, 1000);
+                }
+            }
+            return;
+        }
+
+        // ③ 項目の入力（ステップ2）
+        if (cmdState.playerId !== null && !cmdState.category) {
+            const catMap = { 'r':'rec', 's':'serve', 'a':'spike', 'd':'dig', 'b':'block' };
+            const catNameMap = { 'r':'レセプ', 's':'サーブ', 'a':'スパイク', 'd':'ディグ', 'b':'ブロック' };
+            
+            if (catMap[key]) {
+                // その項目が現在のロールで表示されているかチェック
+                const rowExists = document.getElementById(`row-${cmdState.playerId}-${catMap[key]}`);
+                if(rowExists) {
+                    cmdState.category = catMap[key];
+                    cmdText.innerHTML = `<span class="cmd-highlight">${catNameMap[key]}</span> : 評価(j/k/l/;)を選択`;
+                    updateCmdUI();
+                }
+            }
+            return;
+        }
+
+        // ④ 評価の入力とデータ送信（ステップ3）
+        if (cmdState.category !== null) {
+            let type = '';
+            if (key === 'j') type = 'ex';
+            else if (key === 'k') type = 'ok';
+            else if (key === 'l') type = 'bad';
+            else if (e.key === ';') type = 'miss'; // セミコロンはtoLowerCase関係なし
+
+            if (type) {
+                // データをFirebaseに送信（ボタンクリックと同じ関数を呼ぶ）
+                record(cmdState.playerId, cmdState.category, type);
+                
+                // 入力成功のエフェクトとしてモニターを更新してリセット
+                cmdText.innerHTML = `<span style="color:var(--green)">✓ 記録完了！</span>`;
+                setTimeout(resetCmd, 500); // 0.5秒後にリセット
+            }
+            return;
+        }
+    });
+
+    // コマンド状態のリセット関数
+    function resetCmd() {
+        cmdState = { numStr: "", playerId: null, category: null };
+        document.getElementById('cmd-monitor').style.display = 'none';
+        updateCmdUI();
+    }
+
+    // コマンドのハイライトUIを更新する関数
+    function updateCmdUI() {
+        // 全てのハイライトを一旦消す
+        document.querySelectorAll('.cmd-active-card').forEach(el => el.classList.remove('cmd-active-card'));
+        document.querySelectorAll('.cmd-active-row').forEach(el => el.classList.remove('cmd-active-row'));
+
+        if (cmdState.playerId !== null) {
+            // 対象の選手カードをハイライト（IDで検索）
+            const card = document.getElementById(`card-${cmdState.playerId}`);
+            if (card) card.classList.add('cmd-active-card');
+
+            if (cmdState.category !== null) {
+                // 対象の行をハイライト
+                const row = document.getElementById(`row-${cmdState.playerId}-${cmdState.category}`);
+                if (row) row.classList.add('cmd-active-row');
+            }
+        }
+    }
 
     if(currentTeamId) {
         document.getElementById('display-team-name').innerText = currentTeamName;
