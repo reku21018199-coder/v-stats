@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.8.1</title>
+    <title>V-Stats Enterprise | v1.8.2</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -25,7 +25,6 @@
         .view-section { display: none; height: 100%; width: 100%; padding: 2px; box-sizing: border-box; }
         .view-section.active { display: flex; }
 
-        /* --- ライブ画面 --- */
         .main-container { flex-direction: row; height: 100%; width: 100%; gap: 2px; }
         .court-section { flex: 1; min-width: 0; min-height: 0; background: var(--court-green); border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 2px; padding: 2px; box-sizing: border-box; overflow-y: auto; }
         .control-section { flex: 0 0 150px; display: flex; flex-direction: column; gap: 2px; height: 100%; min-height: 0; }
@@ -34,9 +33,7 @@
         #bench-list { display: none; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); max-height: 150px; overflow-y: auto; border-radius: 4px; }
         .bench-item { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: bold; text-align: center; color: var(--text); cursor:pointer;}
         
-        /* 💡 コート上の選択中カードのハイライト */
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px rgba(92, 182, 255, 0.5); }
-        /* 💡 ベンチリストの選択中アイテムのハイライトを追加 */
         .selected-swap-bench { background: #0d47a1 !important; border-color: var(--neon-blue) !important; color: #fff !important; box-shadow: inset 0 0 10px rgba(92, 182, 255, 0.5); }
 
         .score-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px; text-align: center; }
@@ -239,11 +236,28 @@
     let gameRef, statusRef, historyRef;
     let teamsRegistry = {};
 
+    // 💡 URLからロール（役割）を読み取り、変数を整理
     const params = new URLSearchParams(window.location.search);
     const myRole = params.get('role');
-    if (myRole === 'tablet') document.body.classList.add('tablet-mode');
+    
+    if (myRole && myRole.startsWith('tablet')) document.body.classList.add('tablet-mode');
     if (myRole === 'compact_tablet') document.body.classList.add('compact-tablet-mode');
-    const isSpecialRole = (myRole === 'attack' || myRole === 'defense' || myRole === 'defence');
+
+    // 攻撃と守備それぞれの表示フラグを設定
+    const isAttackRole = (myRole === 'attack' || myRole === 'tablet-attack');
+    const isDefenseRole = (myRole === 'defense' || myRole === 'defence' || myRole === 'tablet-defense' || myRole === 'tablet-defence');
+    const isSpecialRole = (isAttackRole || isDefenseRole);
+
+    const showAttack = (!myRole || isAttackRole || myRole === 'tablet' || myRole === 'compact_tablet');
+    const showDefense = (!myRole || isDefenseRole || myRole === 'tablet' || myRole === 'compact_tablet');
+
+    // 特定ロール時のUI隠蔽処理
+    if (isSpecialRole) {
+        document.getElementById('live-analysis').style.display = 'none';
+        const actionBtns = document.getElementById('action-buttons');
+        actionBtns.style.flex = '1';
+        actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
+    }
 
     let players, courtIds, score, currentRot, serveRights, rotStats, history = [], swapSourceId = null;
     let playersStatus = [];
@@ -423,9 +437,11 @@
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const p = players[courtIds[idx]];
             const card = document.createElement('div'); card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`; let rowsHTML = '';
-            if (!myRole || myRole === 'attack' || myRole === 'tablet' || myRole === 'compact_tablet') { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
-            if (!myRole || myRole === 'defense' || myRole === 'defence' || myRole === 'tablet' || myRole === 'compact_tablet') { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
-            // 💡 「交代」の文字を削除しアイコンのみに
+            
+            // 💡 rolesに応じた表示制限
+            if (showAttack) { rowsHTML += createRow(p.id, 'SPIKE', 'spike', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'BLOCK', 'block', ['◎','○','△','×']); }
+            if (showDefense) { rowsHTML += createRow(p.id, 'REC', 'rec', ['A','B','C','×']); rowsHTML += createRow(p.id, 'SERVE', 'serve', ['◎','○','△','×']); rowsHTML += createRow(p.id, 'DIG', 'dig', ['◎','○','△','×']); }
+            
             card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); }); document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
@@ -433,7 +449,6 @@
         players.forEach(p => { 
             if(!courtIds.includes(p.id)) { 
                 const item = document.createElement('div'); 
-                // 💡 ベンチ側の選手も、選択されている場合は光らせる
                 item.className = `bench-item ${swapSourceId === p.id ? 'selected-swap-bench' : ''}`; 
                 item.innerText = `#${p.no} ${p.name}`; 
                 item.onclick = () => window.handleSwap(p.id); 
@@ -450,10 +465,11 @@
 
     window.record = (pid, cat, type) => { const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type; players[pid][cat][key]++; history.push({type:'stat', pid, cat, key}); save(); };
     window.modifyScore = (side, val) => { let rotated = false; let pRights = serveRights; if(side==='us' && val>0 && serveRights==='them') { courtIds=[courtIds[1],courtIds[2],courtIds[3],courtIds[4],courtIds[5],courtIds[0]]; currentRot=currentRot===6?1:currentRot+1; serveRights='us'; rotated=true; } else if(side==='them' && val>0) serveRights='them'; score[side]+=val; if(val>0) { if(side==='us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; } history.push({type:'score', side, val, rotated, pRights}); save(); };
+    
+    // 💡 控え選手の自動閉じ機能を削除（もう一度ボタンを押すまで閉じない）
     window.handleSwap = (id) => { 
         if(swapSourceId === null) { 
             swapSourceId = id; 
-            if(!courtIds.includes(id)) window.toggleBench(); 
             render(); 
         } else { 
             const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); 
@@ -461,10 +477,10 @@
             else if(idxS!==-1) courtIds[idxS]=id; 
             else if(idxT!==-1) courtIds[idxT]=swapSourceId; 
             swapSourceId=null; 
-            document.getElementById('bench-list').style.display='none'; 
             save(); 
         } 
     };
+    
     window.undo = () => { if(!history.length) return; const last = history.pop(); if(last.type==='stat') players[last.pid][last.cat][last.key]--; else { score[last.side]-=last.val; if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; } if(last.rotated) { courtIds=[courtIds[5],courtIds[0],courtIds[1],courtIds[2],courtIds[3],courtIds[4]]; currentRot=currentRot===1?6:currentRot-1; } serveRights = last.pRights; } save(); };
     
     window.finishGame = () => { 
