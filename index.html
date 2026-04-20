@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.10.1</title>
+    <title>V-Stats Enterprise | v1.11.0</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -40,10 +40,8 @@
         .cmd-active-row { background: rgba(229, 181, 103, 0.2) !important; border-radius: 4px; box-shadow: none !important;}
 
         .score-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px; text-align: center; }
-        .score-display { font-size: 28px; font-weight: bold; color: var(--gold); line-height: 1; }
-        .score-ctrl { display: flex; justify-content: space-around; gap: 2px; margin-top: 2px; }
+        .score-display { font-size: 32px; font-weight: bold; color: var(--gold); line-height: 1; margin-bottom: 4px;}
         .small-btn { flex: 1; height: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 3px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .rot-info { background: #2c3e50; border-radius: 3px; padding: 4px; text-align: center; font-weight: bold; font-size: 16px; color: var(--neon-blue); }
         
         #live-analysis { flex: 1; background: rgba(0,0,0,0.3); border-top: 1px solid var(--blue); font-size: 9px; padding: 4px; color: var(--neon-blue); overflow-y: auto; }
         #action-buttons { display: flex; gap: 2px; height: 30px; }
@@ -52,21 +50,12 @@
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1px; margin-bottom: 1px; }
         .player-header input { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
         
+        /* 💡 サーバーバッジ */
+        .server-badge { background: var(--orange); color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold; margin-left: 2px; box-shadow: 0 0 5px var(--orange); }
+
         .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; transition: background 0.2s ease;}
-        
-        /* 💡 ローテーション連動ハイライトのCSS（強調版） */
-        .hint-highlight { 
-            background: rgba(92, 182, 255, 0.15); /* 背景色を少し濃く */
-            box-shadow: inset 3px 0 0 var(--neon-blue); /* 左のラインを太く */
-            border-radius: 0 2px 2px 0; 
-            padding-left: 3px;
-        }
-        
-        /* 💡 ハイライトされた項目のラベル（テキスト）を緑色＆強調 */
-        .hint-highlight .stat-label {
-            color: var(--green);
-            font-size: 10px; /* 少し大きく */
-        }
+        .hint-highlight { background: rgba(92, 182, 255, 0.15); box-shadow: inset 3px 0 0 var(--neon-blue); border-radius: 0 2px 2px 0; padding-left: 3px;}
+        .hint-highlight .stat-label { color: var(--green); font-size: 10px; }
 
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; transition: all 0.2s ease;}
@@ -79,6 +68,17 @@
 
         #cmd-monitor { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 1px solid var(--gold); color: var(--text); padding: 6px 15px; border-radius: 20px; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
         .cmd-highlight { color: var(--gold); font-size: 16px; }
+
+        /* 💡 モーダル（オーバーレイ）のCSS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--blue); padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;}
+        .modal-btn { display: block; width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; }
+        
+        /* ポジション設定テーブル用 */
+        .pos-table { width: 100%; margin-top: 10px; font-size: 12px; text-align: left;}
+        .pos-table th { background: #111; padding: 6px; }
+        .pos-table td { padding: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .pos-select { background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; padding: 4px; border-radius: 3px; width: 100%; }
 
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
@@ -95,14 +95,12 @@
         body.tablet-mode .player-header input { font-size: 14px; width: 45%; }
         body.tablet-mode .stat-item { gap: 3px; padding: 3px 0; }
         body.tablet-mode .stat-label, body.tablet-mode .rate-txt { font-size: 12px; }
-        /* 💡 タブレットモード時のハイライト文字サイズも調整 */
         body.tablet-mode .hint-highlight .stat-label { font-size: 13px; }
         body.tablet-mode .btn-grid { gap: 3px; }
         body.tablet-mode .btn { font-size: 14px; padding: 8px 0; border-radius: 4px; }
         body.tablet-mode .num-row { font-size: 16px; margin-top: 4px; }
         body.tablet-mode .score-display { font-size: 42px; }
         body.tablet-mode .small-btn { font-size: 16px; height: 44px; border-radius: 5px; }
-        body.tablet-mode .rot-info { font-size: 24px; padding: 8px; }
         body.tablet-mode #live-analysis { font-size: 12px; padding: 8px; line-height: 1.4; }
         body.tablet-mode #action-buttons { height: 42px; gap: 5px; }
 
@@ -112,13 +110,11 @@
         body.compact-tablet-mode .player-header input { font-size: 13px; }
         body.compact-tablet-mode .stat-item { gap: 2px; padding: 2px 0; }
         body.compact-tablet-mode .stat-label, body.compact-tablet-mode .rate-txt { font-size: 11px; }
-        /* 💡 コンパクトタブレットモード時のハイライト文字サイズ */
         body.compact-tablet-mode .hint-highlight .stat-label { font-size: 12px; }
         body.compact-tablet-mode .btn { font-size: 12px; padding: 6px 0; border-radius: 3px; }
         body.compact-tablet-mode .num-row { font-size: 15px; margin-top: 3px; }
         body.compact-tablet-mode .score-display { font-size: 38px; }
         body.compact-tablet-mode .small-btn { font-size: 14px; height: 40px; }
-        body.compact-tablet-mode .rot-info { font-size: 20px; padding: 6px; }
 
         /* 共通CSS */
         #view-players, #view-history, #view-match-detail, #view-teams { flex-direction: column; background: transparent; gap: 8px; padding: 12px; overflow-y: auto;}
@@ -165,17 +161,36 @@
 
     <div id="cmd-monitor">⌨️ <span id="cmd-text">待機中</span></div>
 
+    <div class="modal-overlay" id="start-overlay">
+        <div class="modal-content">
+            <h2 style="color:var(--neon-blue); margin-top:0;">試合開始</h2>
+            <p style="font-size:14px; color:#ccc;">最初のプレーを選択してください。<br>※これによってローテーションが自動管理されます。</p>
+            <button class="modal-btn" style="background:var(--blue);" onclick="startMatch('us')">🏐 サーブからスタート</button>
+            <button class="modal-btn" style="background:var(--orange);" onclick="startMatch('them')">🤲 レセプションからスタート</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pos-setting-modal">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <h2 style="color:var(--gold); margin-top:0; font-size:18px;">ポジション詳細設定</h2>
+            <p style="font-size:11px; color:#aaa;">設定した位置にカードが自動で移動します。</p>
+            <table class="pos-table">
+                <thead><tr><th>選手</th><th>前衛ポジ</th><th>後衛ポジ</th></tr></thead>
+                <tbody id="pos-table-body"></tbody>
+            </table>
+            <button class="modal-btn" style="background:var(--green); margin-top:15px;" onclick="closePosSettings()">保存して閉じる</button>
+        </div>
+    </div>
+
     <div id="view-teams" class="view-section active">
         <h2 style="margin: 0; font-size: 16px; color: var(--neon-blue);">チーム管理 / ログイン</h2>
         <p style="font-size:11px; color:#aaa; margin:0 0 10px 0;">チームを作成するか、一覧からログインしてください。</p>
-        
         <div class="form-group">
             <h3 style="margin:0; font-size:14px; color:var(--gold);">新規チーム作成</h3>
             <input type="text" id="new-team-name" class="form-input" placeholder="チーム名 (例: 福岡工業大学, KYN)">
             <input type="password" id="new-team-pass" class="form-input" placeholder="管理パスワードを設定">
             <button class="primary-btn" onclick="createTeam()">新規チームを作成</button>
         </div>
-
         <h3 style="margin:10px 0 5px 0; font-size:14px; color:white;">登録済みチーム一覧</h3>
         <div id="team-list-container"></div>
     </div>
@@ -188,16 +203,17 @@
                 <div id="bench-list"></div>
                 <div class="score-box">
                     <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
-                    <div class="score-ctrl">
-                        <button class="small-btn" onclick="modifyScore('us', 1)">自+</button>
-                        <button class="small-btn" onclick="modifyScore('them', 1)">相+</button>
-                    </div>
                 </div>
-                <div class="rot-info">S<span id="current-rot">1</span></div>
-                <div id="live-analysis"></div>
+                <div style="display:flex; gap:2px; margin-top:2px;">
+                    <button class="small-btn" style="background:var(--red);" onclick="addTeamError('us')">自分チームミス</button>
+                    <button class="small-btn" style="background:var(--green);" onclick="addTeamError('them')">相手チームミス</button>
+                </div>
+                <button class="small-btn" style="width:100%; margin-top:2px; background:#444;" onclick="openPosSettings()">⚙️ ポジション設定</button>
+                
+                <div id="live-analysis" style="margin-top:2px;"></div>
                 <div id="action-buttons">
                     <button class="small-btn" onclick="undo()">戻る</button>
-                    <button class="small-btn" style="background:var(--red);" onclick="finishGame()">集計保存</button>
+                    <button class="small-btn" style="background:var(--gold); color:#000;" onclick="finishGame()">集計保存</button>
                 </div>
                 <div id="sync-status">● 同期中</div>
             </div>
@@ -283,12 +299,18 @@
         actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
     }
 
-    let players, courtIds, score, currentRot, serveRights, rotStats, history = [], swapSourceId = null;
+    // 💡 変数の追加: serveOrder (サーブ順に並んだ6人のID)
+    let players, courtIds, serveOrder, score, serveRights, rotStats, history = [], swapSourceId = null;
     let playersStatus = [];
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
 
-    const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex-s.miss)/t*100).toFixed(0):0; };
+    // トランザクション管理用
+    let isTransaction = false;
+    let currentTransaction = [];
+
+    // 💡 スパイク決定率 (得点/打数 * 100)
+    const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
 
     const registryRef = ref(db, 'teams_registry');
@@ -322,13 +344,16 @@
         const name = document.getElementById('new-team-name').value.trim(); const pass = document.getElementById('new-team-pass').value.trim();
         if(!name || !pass) return alert('チーム名とパスワードを入力してください');
         const teamId = 'team_' + Date.now(); set(ref(db, `teams_registry/${teamId}`), { name, pass });
-        let initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
+        
+        // 💡 frontPos, backPos を追加
+        let initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, frontPos:'', backPos:'', spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
         if (name === "福岡工業大学") {
             initPlayers[0] = { ...initPlayers[0], no: 23, name: "黒木廉" }; initPlayers[1] = { ...initPlayers[1], no: 4, name: "藤野悠歩" };
             initPlayers[2] = { ...initPlayers[2], no: 1, name: "平嶋璃音" }; initPlayers[3] = { ...initPlayers[3], no: 2, name: "田中恥真" };
             initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" }; initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
         }
-        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], score: {us:0, them:0}, currentRot: 1, serveRights: 'us', rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
+        // 💡 serveRights: null, serveOrder を追加
+        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
         set(ref(db, `teams/${teamId}/live_game`), defaultData);
         document.getElementById('new-team-name').value = ''; document.getElementById('new-team-pass').value = '';
         alert(`${name} を作成しました！一覧からログインしてください。`);
@@ -346,39 +371,113 @@
         } else if (pass !== null) alert('パスワードが違います');
     };
 
-    function renderTeamsView() {
-        const container = document.getElementById('team-list-container'); container.innerHTML = '';
-        for (const [id, data] of Object.entries(teamsRegistry)) {
-            const div = document.createElement('div'); div.className = 'team-list-item';
-            div.innerHTML = `<div style="font-size:16px; font-weight:bold; color:white;">${data.name}</div><div class="team-list-actions"><button class="login-btn" onclick="loginTeam('${id}')">ログイン</button><button class="del-team-btn" onclick="deleteTeam('${id}')">削除</button></div>`;
-            container.appendChild(div);
-        }
-    }
-
     function attachFirebaseListeners(teamId) {
         if(gameRef) off(gameRef); if(statusRef) off(statusRef); if(historyRef) off(historyRef);
         gameRef = ref(db, `teams/${teamId}/live_game`); statusRef = ref(db, `teams/${teamId}/players_status`); historyRef = ref(db, `teams/${teamId}/matches_history`);
         onValue(gameRef, (snapshot) => {
             if(!snapshot.exists()) return;
             const data = snapshot.val();
-            players = data.players; courtIds = data.courtIds; score = data.score; currentRot = data.currentRot; serveRights = data.serveRights; rotStats = data.rotStats;
-            if(document.getElementById('view-live').classList.contains('active')) { render(); updateCmdUI(); } 
+            players = data.players; courtIds = data.courtIds; score = data.score; serveRights = data.serveRights; rotStats = data.rotStats;
+            
+            // 下位互換性のため、serveOrderがなければ作る
+            serveOrder = data.serveOrder || [...courtIds]; 
+
+            if(document.getElementById('view-live').classList.contains('active')) { 
+                checkStartOverlay();
+                render(); 
+                updateCmdUI(); 
+            } 
             if(!isSpecialRole) updateAnalysis();
         });
         onValue(statusRef, (snapshot) => { playersStatus = snapshot.val() || Array.from({length: 15}, (_, i) => ({ id: i, height: "", reach: "", serve_speed: "", spike_speed: "" })); if(document.getElementById('view-players').classList.contains('active')) renderStatusTable(); });
         onValue(historyRef, (snapshot) => { savedMatches = snapshot.val() || {}; if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); });
     }
 
-    function save() { if(currentTeamId) set(gameRef, { players, courtIds, score, currentRot, serveRights, rotStats }); }
+    function save() { if(currentTeamId) set(gameRef, { players, courtIds, serveOrder, score, serveRights, rotStats }); }
     window.saveStatus = (pid, field, value) => { playersStatus[pid][field] = value; set(statusRef, playersStatus); };
 
-    function renderStatusTable() {
-        const tbody = document.getElementById('player-status-tbody'); tbody.innerHTML = '';
+    // 💡 スタート画面の制御
+    function checkStartOverlay() {
+        const overlay = document.getElementById('start-overlay');
+        if (serveRights === null) {
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+
+    window.startMatch = (right) => {
+        serveRights = right;
+        document.getElementById('start-overlay').style.display = 'none';
+        save();
+    };
+
+    // 💡 ポジション設定モーダルの制御
+    window.openPosSettings = () => {
+        const tbody = document.getElementById('pos-table-body');
+        tbody.innerHTML = '';
         players.forEach(p => {
-            const stat = playersStatus[p.id] || { height: "", reach: "", serve_speed: "", spike_speed: "" }; const tr = document.createElement('tr');
-            tr.innerHTML = `<td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td><td><input type="number" value="${stat.height}" onchange="saveStatus(${p.id}, 'height', this.value)"></td><td><input type="number" value="${stat.reach}" onchange="saveStatus(${p.id}, 'reach', this.value)"></td><td><input type="number" value="${stat.serve_speed}" onchange="saveStatus(${p.id}, 'serve_speed', this.value)"></td><td><input type="number" value="${stat.spike_speed}" onchange="saveStatus(${p.id}, 'spike_speed', this.value)"></td>`;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold;">#${p.no} ${p.name}</td>
+                <td>
+                    <select class="pos-select" id="frontPos-${p.id}">
+                        <option value="" ${p.frontPos===''?'selected':''}>未設定</option>
+                        <option value="L" ${p.frontPos==='L'?'selected':''}>レフト</option>
+                        <option value="C" ${p.frontPos==='C'?'selected':''}>センター</option>
+                        <option value="R" ${p.frontPos==='R'?'selected':''}>ライト</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="pos-select" id="backPos-${p.id}">
+                        <option value="" ${p.backPos===''?'selected':''}>未設定</option>
+                        <option value="L" ${p.backPos==='L'?'selected':''}>レフト</option>
+                        <option value="C" ${p.backPos==='C'?'selected':''}>センター</option>
+                        <option value="R" ${p.backPos==='R'?'selected':''}>ライト</option>
+                    </select>
+                </td>
+            `;
             tbody.appendChild(tr);
         });
+        document.getElementById('pos-setting-modal').style.display = 'flex';
+    };
+
+    window.closePosSettings = () => {
+        players.forEach(p => {
+            p.frontPos = document.getElementById(`frontPos-${p.id}`).value;
+            p.backPos = document.getElementById(`backPos-${p.id}`).value;
+        });
+        document.getElementById('pos-setting-modal').style.display = 'none';
+        courtIds = calculateCourtIds(); // 配置再計算
+        save();
+    };
+
+    // 💡 自動配置アルゴリズム (serveOrder から courtIds を生成)
+    function calculateCourtIds() {
+        // serveOrder: [S1, S2, S3, S4, S5, S6]
+        const fIds = [serveOrder[1], serveOrder[2], serveOrder[3]]; // 前衛
+        const bIds = [serveOrder[4], serveOrder[5], serveOrder[0]]; // 後衛
+        let displayIds = new Array(6);
+
+        // 前衛配置 (L:3, C:2, R:1)
+        let fRemaining = [...fIds];
+        const fSlots = { 'L': 3, 'C': 2, 'R': 1 };
+        ['L', 'C', 'R'].forEach(pos => {
+            const idx = fRemaining.findIndex(id => players[id].frontPos === pos);
+            if (idx !== -1) { displayIds[fSlots[pos]] = fRemaining[idx]; fRemaining.splice(idx, 1); }
+        });
+        [3, 2, 1].forEach(slot => { if (displayIds[slot] === undefined) displayIds[slot] = fRemaining.shift(); });
+
+        // 後衛配置 (L:4, C:5, R:0)
+        let bRemaining = [...bIds];
+        const bSlots = { 'L': 4, 'C': 5, 'R': 0 };
+        ['L', 'C', 'R'].forEach(pos => {
+            const idx = bRemaining.findIndex(id => players[id].backPos === pos);
+            if (idx !== -1) { displayIds[bSlots[pos]] = bRemaining[idx]; bRemaining.splice(idx, 1); }
+        });
+        [4, 5, 0].forEach(slot => { if (displayIds[slot] === undefined) displayIds[slot] = bRemaining.shift(); });
+
+        return displayIds;
     }
 
     function renderHistoryView() {
@@ -392,6 +491,7 @@
         });
     }
 
+    // 💡 履歴画面の完全詳細フォーマット
     window.showMatchDetail = (matchId) => {
         const m = savedMatches[matchId]; if(!m || !m.players) return;
         document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
@@ -404,7 +504,13 @@
             
             if(spkTotal === 0 && recTotal === 0 && p.block.ex === 0 && (p.serve.ex + p.serve.ok + p.serve.bad + p.serve.miss) === 0 && (p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss) === 0) return;
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td><td style="border-left:2px solid #555;"><span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span> <span class="stat-cell">(${p.spike.ex}/${spkTotal}/${p.spike.miss})</span></td><td style="border-left:2px solid #555;"><span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span> <span class="stat-cell">(${p.rec.a},${p.rec.b}/${recTotal}/${p.rec.miss})</span></td><td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.block.ex}</span></td><td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.serve.ex}</span></td>`;
+            tr.innerHTML = `
+                <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span> <span class="stat-cell">(${p.spike.ex}/${p.spike.ok}/${p.spike.bad}/${p.spike.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span> <span class="stat-cell">(${p.rec.a}/${p.rec.b}/${p.rec.c}/${p.rec.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.block.ex}</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.serve.ex}</span> <span class="stat-cell">(${p.serve.ex}/${p.serve.ok}/${p.serve.bad}/${p.serve.miss})</span></td>
+            `;
             tbody.appendChild(tr);
         });
         switchView('match-detail');
@@ -418,14 +524,14 @@
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const p = players[courtIds[idx]];
             
-            const isFront = (idx === 1 || idx === 2 || idx === 3); 
-            const isBack = (idx === 4 || idx === 5 || idx === 0);  
-            const isServer = (idx === 0);                          
+            // 💡 serveOrder基準でのハイライト判定
+            const isFront = (p.id === serveOrder[1] || p.id === serveOrder[2] || p.id === serveOrder[3]); 
+            const isBack = (p.id === serveOrder[4] || p.id === serveOrder[5] || p.id === serveOrder[0]);  
+            const isServer = (p.id === serveOrder[0]);                          
 
             const card = document.createElement('div'); card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`; card.id = `card-${p.id}`; 
             let rowsHTML = '';
             
-            // 💡 項目の順番を変更：スパイク → ブロック → レセプション → ディグ → サーブ
             if (showAttack) { 
                 rowsHTML += createRow(p.id, 'スパイク', 'spike', ['◎','○','△','×'], isFront); 
                 rowsHTML += createRow(p.id, 'ブロック', 'block', ['◎','○','△','×'], isFront); 
@@ -436,7 +542,11 @@
                 rowsHTML += createRow(p.id, 'サーブ', 'serve', ['◎','○','△','×'], isServer); 
             }
             
-            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
+            // 💡 サーバーバッジの表示
+            let badgeHTML = '';
+            if (isServer && serveRights === 'us') badgeHTML = `<span class="server-badge">🏐 サーバー</span>`;
+
+            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}">${badgeHTML}<span style="margin-left:auto; cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); }); document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
         const blist = document.getElementById('bench-list'); blist.innerHTML = '';
@@ -449,7 +559,7 @@
                 blist.appendChild(item); 
             } 
         });
-        document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; document.getElementById('current-rot').innerText = currentRot;
+        document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; 
     }
 
     function createRow(pid, label, cat, btns, isHighlighted = false) {
@@ -458,14 +568,90 @@
         return `<div class="stat-item ${highlightClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
-    window.record = (pid, cat, type) => { const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type; players[pid][cat][key]++; history.push({type:'stat', pid, cat, key}); save(); };
-    window.modifyScore = (side, val) => { let rotated = false; let pRights = serveRights; if(side==='us' && val>0 && serveRights==='them') { courtIds=[courtIds[1],courtIds[2],courtIds[3],courtIds[4],courtIds[5],courtIds[0]]; currentRot=currentRot===6?1:currentRot+1; serveRights='us'; rotated=true; } else if(side==='them' && val>0) serveRights='them'; score[side]+=val; if(val>0) { if(side==='us') rotStats[currentRot].plus++; else rotStats[currentRot].minus++; } history.push({type:'score', side, val, rotated, pRights}); save(); };
+    // 💡 トランザクション管理
+    function startTransaction() { isTransaction = true; currentTransaction = []; }
+    function commitTransaction() { isTransaction = false; if(currentTransaction.length) history.push(currentTransaction); save(); }
+
+    window.record = (pid, cat, type) => { 
+        startTransaction();
+        const key = (cat==='rec' && type==='ex') ? 'a' : (cat==='rec' && type==='ok') ? 'b' : (cat==='rec' && type==='bad') ? 'c' : type; 
+        players[pid][cat][key]++; 
+        currentTransaction.push({type:'stat', pid, cat, key}); 
+
+        // 💡 評価と得点の連動
+        if (type === 'ex' && ['spike', 'block', 'serve'].includes(cat)) {
+            modifyScoreInternal('us', 1);
+        } else if (type === 'miss') {
+            modifyScoreInternal('them', 1);
+        }
+        commitTransaction();
+    };
+
+    window.addTeamError = (side) => {
+        startTransaction();
+        modifyScoreInternal(side, 1);
+        commitTransaction();
+    };
+
+    function modifyScoreInternal(side, val) {
+        let rotated = false; 
+        let pRights = serveRights; 
+        let prevServeOrder = [...serveOrder];
+
+        if(side==='us' && val>0 && serveRights==='them') { 
+            // 💡 ローテーション回転 (S1->S6, S2->S1...)
+            serveOrder.unshift(serveOrder.pop());
+            serveRights='us'; 
+            rotated=true; 
+        } else if(side==='them' && val>0) {
+            serveRights='them'; 
+        }
+        
+        score[side]+=val; 
+        // courtIdsの再計算
+        courtIds = calculateCourtIds();
+
+        currentTransaction.push({type:'score', side, val, rotated, pRights, prevServeOrder}); 
+    }
+
+    window.modifyScore = (side, val) => {
+        startTransaction();
+        modifyScoreInternal(side, val);
+        commitTransaction();
+    };
     
+    // 💡 交代もserveOrder基準に修正
     window.handleSwap = (id) => { 
         if(swapSourceId === null) { swapSourceId = id; render(); } 
-        else { const idxS = courtIds.indexOf(swapSourceId), idxT = courtIds.indexOf(id); if(idxS!==-1 && idxT!==-1) [courtIds[idxS], courtIds[idxT]] = [courtIds[idxT], courtIds[idxS]]; else if(idxS!==-1) courtIds[idxS]=id; else if(idxT!==-1) courtIds[idxT]=swapSourceId; swapSourceId=null; save(); } 
+        else { 
+            const idxS = serveOrder.indexOf(swapSourceId), idxT = serveOrder.indexOf(id); 
+            if(idxS!==-1 && idxT!==-1) [serveOrder[idxS], serveOrder[idxT]] = [serveOrder[idxT], serveOrder[idxS]]; 
+            else if(idxS!==-1) serveOrder[idxS]=id; 
+            else if(idxT!==-1) serveOrder[idxT]=swapSourceId; 
+            
+            courtIds = calculateCourtIds();
+            swapSourceId=null; 
+            save(); 
+        } 
     };
-    window.undo = () => { if(!history.length) return; const last = history.pop(); if(last.type==='stat') players[last.pid][last.cat][last.key]--; else { score[last.side]-=last.val; if(last.val > 0) { if(last.side==='us') rotStats[currentRot].plus--; else rotStats[currentRot].minus--; } if(last.rotated) { courtIds=[courtIds[5],courtIds[0],courtIds[1],courtIds[2],courtIds[3],courtIds[4]]; currentRot=currentRot===1?6:currentRot-1; } serveRights = last.pRights; } save(); };
+
+    // 💡 トランザクション対応のUndo
+    window.undo = () => { 
+        if(!history.length) return; 
+        const actions = history.pop(); 
+        for (let i = actions.length - 1; i >= 0; i--) {
+            const last = actions[i];
+            if(last.type==='stat') {
+                players[last.pid][last.cat][last.key]--;
+            } else if (last.type==='score') {
+                score[last.side]-=last.val; 
+                serveRights = last.pRights;
+                if (last.prevServeOrder) serveOrder = [...last.prevServeOrder];
+                courtIds = calculateCourtIds();
+            }
+        }
+        save(); 
+    };
     
     window.finishGame = () => { 
         if(confirm("この試合のデータを履歴に保存し、ボードを初期化しますか？")) { 
@@ -473,18 +659,19 @@
             const matchId = Date.now(); 
             const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, rotStats: rotStats };
             set(ref(db, `teams/${currentTeamId}/matches_history/${matchId}`), matchData).then(() => { 
-                const initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: players[i].no, name: players[i].name, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
-                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], score: {us:0, them:0}, currentRot: 1, serveRights: 'us', rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
+                const initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: players[i].no, name: players[i].name, frontPos: players[i].frontPos, backPos: players[i].backPos, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
+                // 💡 リセット時もserveRightsをnullにしてスタート画面を出す
+                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
                 set(gameRef, resetData); 
             });
         } 
     };
 
     window.toggleBench = () => { const l = document.getElementById('bench-list'); l.style.display = l.style.display==='block'?'none':'block'; };
-    const updateAnalysis = () => { const ana = document.getElementById('live-analysis'); if (!rotStats || rotStats.length < 7) return; const sortedRot = [...rotStats].map((s,i)=>({i, d:s.plus-s.minus})).slice(1).sort((a,b)=>b.d-a.d); const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0]; ana.innerHTML = `<b>【分析】</b><br>最高R: S${sortedRot[0].i} (+${sortedRot[0].d})<br>最弱R: S${sortedRot[5].i} (${sortedRot[5].d})<br>得点王: #${bestSpiker.no} ${bestSpiker.name}`; };
+    const updateAnalysis = () => { const ana = document.getElementById('live-analysis'); if (!rotStats || rotStats.length < 7) return; const bestSpiker = [...players].sort((a,b)=> (b.spike.ex - b.spike.miss) - (a.spike.ex - a.spike.miss))[0]; ana.innerHTML = `<b>【分析】</b> 得点王: #${bestSpiker.no} ${bestSpiker.name}`; };
 
     window.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
 
         const key = e.key.toLowerCase();
         const cmdMonitor = document.getElementById('cmd-monitor');
