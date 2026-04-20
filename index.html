@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.12.1</title>
+    <title>V-Stats Enterprise | v1.12.2</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -369,6 +369,16 @@
             alert('チームを削除しました');
         } else if (pass !== null) alert('パスワードが違います');
     };
+
+    // 💡 削除してしまったチーム一覧描画関数を復元！
+    function renderTeamsView() {
+        const container = document.getElementById('team-list-container'); container.innerHTML = '';
+        for (const [id, data] of Object.entries(teamsRegistry)) {
+            const div = document.createElement('div'); div.className = 'team-list-item';
+            div.innerHTML = `<div style="font-size:16px; font-weight:bold; color:white;">${data.name}</div><div class="team-list-actions"><button class="login-btn" onclick="loginTeam('${id}')">ログイン</button><button class="del-team-btn" onclick="deleteTeam('${id}')">削除</button></div>`;
+            container.appendChild(div);
+        }
+    }
 
     function attachFirebaseListeners(teamId) {
         if(gameRef) off(gameRef); if(historyRef) off(historyRef);
