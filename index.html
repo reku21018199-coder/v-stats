@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.12.0</title>
+    <title>V-Stats Enterprise | v1.12.1</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -71,7 +71,6 @@
         .modal-content { background: var(--card-bg); border: 1px solid var(--blue); padding: 20px; border-radius: 8px; width: 95%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;}
         .modal-btn { display: block; width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; }
         
-        /* 💡 修正: 横スクロールをなくすためのレイアウト最適化 */
         .pos-table { width: 100%; margin-top: 10px; font-size: 12px; text-align: left; table-layout: fixed; border-collapse: collapse;}
         .pos-table th { background: #111; padding: 6px 2px; border-bottom: 1px solid #444; text-align: center;}
         .pos-table td { padding: 6px 2px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center;}
@@ -306,7 +305,6 @@
         actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
     }
 
-    // 💡 変数の追加: liberoSettings
     let players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings, history = [], swapSourceId = null;
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
@@ -375,6 +373,7 @@
     function attachFirebaseListeners(teamId) {
         if(gameRef) off(gameRef); if(historyRef) off(historyRef);
         gameRef = ref(db, `teams/${teamId}/live_game`); historyRef = ref(db, `teams/${teamId}/matches_history`);
+        
         onValue(gameRef, (snapshot) => {
             if(!snapshot.exists()) return;
             const data = snapshot.val();
@@ -389,7 +388,11 @@
             } 
             if(!isSpecialRole) updateAnalysis();
         });
-        onValue(historyRef, (snapshot) => { savedMatches = snapshot.val() || {}; if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); });
+
+        onValue(historyRef, (snapshot) => { 
+            savedMatches = snapshot.val() || {}; 
+            if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); 
+        });
     }
 
     function save() { if(currentTeamId) set(gameRef, { players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings }); }
@@ -408,7 +411,6 @@
         save(); 
     };
 
-    // 💡 ポジション・リベロ設定モーダルの制御
     window.openPosSettings = () => {
         const tSel = document.getElementById('libero-target');
         const lSel = document.getElementById('libero-player');
@@ -463,7 +465,6 @@
         save();
     };
 
-    // 💡 リベロ自動交代ロジック
     function checkLiberoSwap() {
         if (!liberoSettings || !liberoSettings.enabled || liberoSettings.targetId === '' || liberoSettings.liberoId === '') return;
         const tId = parseInt(liberoSettings.targetId);
