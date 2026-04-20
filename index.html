@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.12.4</title>
+    <title>V-Stats Enterprise | v1.13.0</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -17,10 +17,16 @@
         .app-title { font-weight: bold; font-size: 14px; color: var(--neon-blue); text-shadow: 0 0 5px rgba(92, 182, 255, 0.5); }
         .team-id-badge { margin-left: auto; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; font-size: 11px; border: 1px solid var(--blue); color: var(--gold); font-weight: bold;}
         
-        .side-menu { position: fixed; top: 40px; left: -250px; width: 250px; height: calc(100% - 40px); background: #1e2127; border-right: 2px solid var(--blue); transition: left 0.3s ease; z-index: 1000; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .side-menu { position: fixed; top: 40px; left: -250px; width: 250px; height: calc(100% - 40px); background: #1e2127; border-right: 2px solid var(--blue); transition: left 0.3s ease; z-index: 1000; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.5); overflow-y: auto; padding-bottom: 20px;}
         .side-menu.open { left: 0; }
         .menu-item { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-weight: bold; font-size: 14px; color: var(--text); text-decoration: none; display: block;}
         
+        /* 💡 アコーディオンメニュー用CSS */
+        .sub-menu { display: none; flex-direction: column; background: rgba(0,0,0,0.2); }
+        .sub-menu.open { display: flex; }
+        .menu-sub-item { padding: 10px 20px 10px 40px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-size: 12px; color: var(--text); text-decoration: none; display: block; }
+        .menu-sub-item:hover { background: rgba(255,255,255,0.05); color: var(--gold); }
+
         .app-body { flex: 1; position: relative; min-height: 0; }
         .view-section { display: none; height: 100%; width: 100%; padding: 2px; box-sizing: border-box; }
         .view-section.active { display: flex; }
@@ -125,6 +131,7 @@
         .stat-cell { color: #aaa; font-size: 9px; display: block; margin-top: 2px;}
         .stat-main { color: var(--text); font-size: 14px; font-weight: bold; }
         .stat-good { color: var(--green); }
+        .stat-bad { color: var(--red); }
 
         .form-group { background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;}
         .form-input { background: rgba(0,0,0,0.3); border: 1px solid var(--blue); color: white; padding: 10px; border-radius: 4px; font-size: 14px; }
@@ -145,14 +152,31 @@
 
 <div class="app-body">
     <div class="side-menu" id="side-menu">
-        <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none; cursor:pointer;">🏐 ライブ入力画面</div>
+        <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none; cursor:pointer;">🏐 入力画面</div>
         <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none; cursor:pointer;">📊 試合履歴アーカイブ</div>
         
-        <a href="?role=tablet-attack" class="menu-item" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px;">⚔️ スパイク＋ブロック入力<br><span style="font-size:10px; color:#aaa;">(タブレット専用)</span></a>
-        <a href="?role=tablet-defense" class="menu-item">🛡️ ディグ＋サーブ＋レセプ入力<br><span style="font-size:10px; color:#aaa;">(タブレット専用)</span></a>
-        <a href="?" class="menu-item">📱 全体入力 (スマホ標準)</a>
+        <div class="menu-item" onclick="toggleSubMenu('tablet-menu')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; display:flex; justify-content:space-between;">📱 タブレット入力 <span>▼</span></div>
+        <div id="tablet-menu" class="sub-menu">
+            <a href="?role=tablet-attack" class="menu-sub-item">⚔️ スパイク＋ブロック入力</a>
+            <a href="?role=tablet-defense" class="menu-sub-item">🛡️ ディグ＋サーブ＋レセプション入力</a>
+            <a href="?role=tablet" class="menu-sub-item">🏐 全体入力</a>
+        </div>
+
+        <div class="menu-item" onclick="toggleSubMenu('mobile-menu')" style="display:flex; justify-content:space-between;">📱 スマホ入力 <span>▼</span></div>
+        <div id="mobile-menu" class="sub-menu">
+            <a href="?role=attack" class="menu-sub-item">⚔️ スパイク＋ブロック入力</a>
+            <a href="?role=defense" class="menu-sub-item">🛡️ ディグ＋サーブ＋レセプション入力</a>
+            <a href="?" class="menu-sub-item">🏐 全体入力</a>
+        </div>
+
+        <div class="menu-item" onclick="toggleSubMenu('pc-menu')" style="display:flex; justify-content:space-between;">💻 PC入力 <span>▼</span></div>
+        <div id="pc-menu" class="sub-menu">
+            <a href="?role=attack" class="menu-sub-item">⚔️ スパイク＋ブロック入力</a>
+            <a href="?role=defense" class="menu-sub-item">🛡️ ディグ＋サーブ＋レセプション入力</a>
+            <a href="?" class="menu-sub-item">🏐 全体入力</a>
+        </div>
         
-        <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: auto; color: var(--gold); cursor:pointer;">🏢 チーム管理 / 切替</div>
+        <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: 20px; color: var(--gold); cursor:pointer;">🏢 チーム変更</div>
     </div>
 
     <div id="cmd-monitor">⌨️ <span id="cmd-text">待機中</span></div>
@@ -172,16 +196,32 @@
             
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:4px; text-align:left; margin-bottom:15px; border: 1px solid rgba(255,255,255,0.1);">
                 <label style="color:var(--neon-blue); font-weight:bold; display:flex; align-items:center; gap:5px; font-size: 14px; cursor:pointer;">
-                    <input type="checkbox" id="libero-enable"> リベロ自動交代を有効にする
+                    <input type="checkbox" id="libero-enable-0"> リベロ1 自動交代を有効にする
                 </label>
                 <div style="display:flex; gap:10px; margin-top:8px;">
                     <div style="flex:1; min-width:0;">
-                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">交代元 (MB等)</div>
-                        <select id="libero-target" class="pos-select"></select>
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">交代元 (MB1等)</div>
+                        <select id="libero-target-0" class="pos-select"></select>
                     </div>
                     <div style="flex:1; min-width:0;">
-                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">リベロ選手</div>
-                        <select id="libero-player" class="pos-select"></select>
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">リベロ選手1</div>
+                        <select id="libero-player-0" class="pos-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:4px; text-align:left; margin-bottom:15px; border: 1px solid rgba(255,255,255,0.1);">
+                <label style="color:var(--neon-blue); font-weight:bold; display:flex; align-items:center; gap:5px; font-size: 14px; cursor:pointer;">
+                    <input type="checkbox" id="libero-enable-1"> リベロ2 自動交代を有効にする
+                </label>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">交代元 (MB2等)</div>
+                        <select id="libero-target-1" class="pos-select"></select>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">リベロ選手2</div>
+                        <select id="libero-player-1" class="pos-select"></select>
                     </div>
                 </div>
             </div>
@@ -263,7 +303,7 @@
                         <th style="border-left:2px solid #555;">サーブ<br><span style="font-size:8px; color:#aaa;">効果率</span></th>
                         <th style="border-left:2px solid #555;">ブロック<br><span style="font-size:8px; color:#aaa;">効果率</span></th>
                         <th style="border-left:2px solid #555;">ディグ<br><span style="font-size:8px; color:#aaa;">成功率</span></th>
-                        <th style="border-left:2px solid #555;">レセプ<br><span style="font-size:8px; color:#aaa;">返球率</span></th>
+                        <th style="border-left:2px solid #555;">レセプション<br><span style="font-size:8px; color:#aaa;">返球率</span></th>
                     </tr>
                 </thead>
                 <tbody id="detail-stats-tbody"></tbody>
@@ -301,12 +341,12 @@
     if (myRole && myRole.startsWith('tablet')) document.body.classList.add('tablet-mode');
     if (myRole === 'compact_tablet') document.body.classList.add('compact-tablet-mode');
 
-    const isAttackRole = (myRole === 'attack' || myRole === 'tablet-attack');
-    const isDefenseRole = (myRole === 'defense' || myRole === 'defence' || myRole === 'tablet-defense' || myRole === 'tablet-defence');
+    const isAttackRole = myRole && (myRole.includes('attack'));
+    const isDefenseRole = myRole && (myRole.includes('defense') || myRole.includes('defence'));
     const isSpecialRole = (isAttackRole || isDefenseRole);
 
-    const showAttack = (!myRole || isAttackRole || myRole === 'tablet' || myRole === 'compact_tablet');
-    const showDefense = (!myRole || isDefenseRole || myRole === 'tablet' || myRole === 'compact_tablet');
+    const showAttack = (!myRole || isAttackRole || (!isAttackRole && !isDefenseRole));
+    const showDefense = (!myRole || isDefenseRole || (!isAttackRole && !isDefenseRole));
 
     if (isSpecialRole) {
         document.getElementById('live-analysis').style.display = 'none';
@@ -322,14 +362,12 @@
     let isTransaction = false;
     let currentTransaction = [];
 
-    // 💡 ===== Vリーグ公式スタッツ計算エンジン =====
     const getSpikeRate = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
     const getServeEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex*100 + s.ok*25 - s.miss*25)/t).toFixed(0):0; };
     const getBlockEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex - s.miss)/t*100).toFixed(0):0; };
     const getDigRate   = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex + s.ok)/t*100).toFixed(0):0; };
     const getRecRate   = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
 
-    // ライブ画面用の動的表示ヘルパー
     function getRateText(cat, s) {
         if(cat === 'spike') return getSpikeRate(s) + '%';
         if(cat === 'serve') return getServeEff(s) + '%';
@@ -338,7 +376,6 @@
         if(cat === 'rec')   return getRecRate(s) + '%';
         return '0%';
     }
-    // 💡 ==========================================
 
     const registryRef = ref(db, 'teams_registry');
     onValue(registryRef, (snapshot) => {
@@ -347,6 +384,13 @@
     });
 
     window.toggleMenu = () => { document.getElementById('side-menu').classList.toggle('open'); };
+    
+    // 💡 サブメニューの開閉関数
+    window.toggleSubMenu = (id) => {
+        const el = document.getElementById(id);
+        el.classList.toggle('open');
+    };
+
     window.switchView = (viewId) => {
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
         document.getElementById(`view-${viewId}`).classList.add('active');
@@ -377,7 +421,12 @@
             initPlayers[2] = { ...initPlayers[2], no: 1, name: "平嶋璃音" }; initPlayers[3] = { ...initPlayers[3], no: 2, name: "田中恥真" };
             initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" }; initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
         }
-        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: {enabled: false, targetId: '', liberoId: ''} };
+        // 💡 2人分のリベロ設定を初期化
+        const defaultLiberoSettings = [
+            {enabled: false, targetId: '', liberoId: ''},
+            {enabled: false, targetId: '', liberoId: ''}
+        ];
+        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: defaultLiberoSettings };
         set(ref(db, `teams/${teamId}/live_game`), defaultData);
         document.getElementById('new-team-name').value = ''; document.getElementById('new-team-pass').value = '';
         alert(`${name} を作成しました！一覧からログインしてください。`);
@@ -414,7 +463,17 @@
             const data = snapshot.val();
             players = data.players; courtIds = data.courtIds; score = data.score; serveRights = data.serveRights; rotStats = data.rotStats;
             serveOrder = data.serveOrder || [...courtIds]; 
-            liberoSettings = data.liberoSettings || { enabled: false, targetId: '', liberoId: '' };
+            
+            // 💡 後方互換性（古いデータ構造を配列に変換）
+            let ls = data.liberoSettings;
+            if (!ls) {
+                liberoSettings = [{enabled:false, targetId:'', liberoId:''}, {enabled:false, targetId:'', liberoId:''}];
+            } else if (!Array.isArray(ls)) {
+                liberoSettings = [ls, {enabled:false, targetId:'', liberoId:''}];
+            } else {
+                liberoSettings = ls;
+                if (liberoSettings.length < 2) liberoSettings.push({enabled:false, targetId:'', liberoId:''});
+            }
 
             if(document.getElementById('view-live').classList.contains('active')) { 
                 checkStartOverlay();
@@ -447,17 +506,23 @@
     };
 
     window.openPosSettings = () => {
-        const tSel = document.getElementById('libero-target');
-        const lSel = document.getElementById('libero-player');
-        tSel.innerHTML = '<option value="">選択</option>';
-        lSel.innerHTML = '<option value="">選択</option>';
+        // 💡 2人分のセレクトボックスを初期化
+        for(let i=0; i<2; i++) {
+            const tSel = document.getElementById(`libero-target-${i}`);
+            const lSel = document.getElementById(`libero-player-${i}`);
+            tSel.innerHTML = '<option value="">選択</option>';
+            lSel.innerHTML = '<option value="">選択</option>';
+            
+            players.forEach(p => {
+                tSel.innerHTML += `<option value="${p.id}" ${liberoSettings[i].targetId==p.id?'selected':''}>#${p.no} ${p.name}</option>`;
+                lSel.innerHTML += `<option value="${p.id}" ${liberoSettings[i].liberoId==p.id?'selected':''}>#${p.no} ${p.name}</option>`;
+            });
+            document.getElementById(`libero-enable-${i}`).checked = liberoSettings[i].enabled;
+        }
 
         const tbody = document.getElementById('pos-table-body');
         tbody.innerHTML = '';
         players.forEach(p => {
-            tSel.innerHTML += `<option value="${p.id}" ${liberoSettings.targetId==p.id?'selected':''}>#${p.no} ${p.name}</option>`;
-            lSel.innerHTML += `<option value="${p.id}" ${liberoSettings.liberoId==p.id?'selected':''}>#${p.no} ${p.name}</option>`;
-
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="font-weight:bold;">#${p.no} ${p.name}</td>
@@ -480,7 +545,6 @@
             `;
             tbody.appendChild(tr);
         });
-        document.getElementById('libero-enable').checked = liberoSettings.enabled;
         document.getElementById('pos-setting-modal').style.display = 'flex';
     };
 
@@ -489,9 +553,12 @@
             p.frontPos = document.getElementById(`frontPos-${p.id}`).value;
             p.backPos = document.getElementById(`backPos-${p.id}`).value;
         });
-        liberoSettings.enabled = document.getElementById('libero-enable').checked;
-        liberoSettings.targetId = document.getElementById('libero-target').value;
-        liberoSettings.liberoId = document.getElementById('libero-player').value;
+        
+        for(let i=0; i<2; i++) {
+            liberoSettings[i].enabled = document.getElementById(`libero-enable-${i}`).checked;
+            liberoSettings[i].targetId = document.getElementById(`libero-target-${i}`).value;
+            liberoSettings[i].liberoId = document.getElementById(`libero-player-${i}`).value;
+        }
 
         document.getElementById('pos-setting-modal').style.display = 'none';
         
@@ -501,36 +568,40 @@
     };
 
     function checkLiberoSwap() {
-        if (!liberoSettings || !liberoSettings.enabled || liberoSettings.targetId === '' || liberoSettings.liberoId === '') return;
-        const tId = parseInt(liberoSettings.targetId);
-        const lId = parseInt(liberoSettings.liberoId);
+        if (!liberoSettings) return;
+        
+        liberoSettings.forEach(setting => {
+            if (!setting.enabled || setting.targetId === '' || setting.liberoId === '') return;
+            const tId = parseInt(setting.targetId);
+            const lId = parseInt(setting.liberoId);
 
-        let sIdxTarget = serveOrder.indexOf(tId);
-        let sIdxLibero = serveOrder.indexOf(lId);
+            let sIdxTarget = serveOrder.indexOf(tId);
+            let sIdxLibero = serveOrder.indexOf(lId);
 
-        let activeId = null;
-        let sIdx = -1;
+            let activeId = null;
+            let sIdx = -1;
 
-        if (sIdxTarget !== -1) { activeId = tId; sIdx = sIdxTarget; }
-        else if (sIdxLibero !== -1) { activeId = lId; sIdx = sIdxLibero; }
+            if (sIdxTarget !== -1) { activeId = tId; sIdx = sIdxTarget; }
+            else if (sIdxLibero !== -1) { activeId = lId; sIdx = sIdxLibero; }
 
-        if (activeId === null) return; 
+            if (activeId === null) return; 
 
-        let shouldBeLibero = false;
-        if (sIdx === 4 || sIdx === 5) {
-            shouldBeLibero = true;
-        } else if (sIdx === 0) {
-            if (serveRights === 'them') shouldBeLibero = true;
-            else shouldBeLibero = false;
-        } else {
-            shouldBeLibero = false;
-        }
+            let shouldBeLibero = false;
+            if (sIdx === 4 || sIdx === 5) {
+                shouldBeLibero = true;
+            } else if (sIdx === 0) {
+                if (serveRights === 'them') shouldBeLibero = true;
+                else shouldBeLibero = false;
+            } else {
+                shouldBeLibero = false;
+            }
 
-        if (shouldBeLibero && activeId === tId) {
-            serveOrder[sIdx] = lId;
-        } else if (!shouldBeLibero && activeId === lId) {
-            serveOrder[sIdx] = tId;
-        }
+            if (shouldBeLibero && activeId === tId) {
+                serveOrder[sIdx] = lId;
+            } else if (!shouldBeLibero && activeId === lId) {
+                serveOrder[sIdx] = tId;
+            }
+        });
     }
 
     function calculateCourtIds() {
@@ -568,7 +639,6 @@
         });
     }
 
-    // 💡 詳細画面の描画（公式スタッツ計算＋ミス集計）
     window.showMatchDetail = (matchId) => {
         const m = savedMatches[matchId]; if(!m || !m.players) return;
         document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; 
@@ -577,7 +647,6 @@
         const tbody = document.getElementById('detail-stats-tbody'); 
         tbody.innerHTML = '';
 
-        // ミス集計用変数
         let teamSpikeMiss = 0, teamServeMiss = 0, teamRecMiss = 0;
         let teamSpikeKill = 0, teamBlockKill = 0, teamServeKill = 0;
 
@@ -588,7 +657,6 @@
             const blockTotal = p.block.ex + p.block.ok + p.block.bad + p.block.miss;
             const digTotal = p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss;
 
-            // チーム全体のエラー・得点要素を合算
             teamSpikeMiss += p.spike.miss;
             teamServeMiss += p.serve.miss;
             teamRecMiss += p.rec.miss;
@@ -603,7 +671,6 @@
             const digRate = getDigRate(p.dig);
             const recRate = getRecRate(p.rec);
             
-            // 何も入力されていない選手はスキップ
             if(spkTotal === 0 && recTotal === 0 && blockTotal === 0 && serveTotal === 0 && digTotal === 0) return;
 
             const tr = document.createElement('tr');
@@ -618,13 +685,11 @@
             tbody.appendChild(tr);
         });
 
-        // 💡 相手のエラー ＝ 総得点 ー 自チームの決定得点
         let opponentErrors = m.score.us - (teamSpikeKill + teamBlockKill + teamServeKill);
-        if (opponentErrors < 0) opponentErrors = 0; // スコア手動調整などで矛盾した時のフォールバック
+        if (opponentErrors < 0) opponentErrors = 0; 
         
         let totalOwnMiss = teamSpikeMiss + teamServeMiss + teamRecMiss;
 
-        // エラーサマリーの描画
         const summaryDiv = document.getElementById('match-error-summary');
         if(summaryDiv) {
             summaryDiv.innerHTML = `
@@ -637,7 +702,7 @@
                     <div style="text-align:center; flex:1;">
                         <div style="font-size:11px; color:var(--red); font-weight:bold;">自チームのミス合計</div>
                         <div style="font-size:24px; font-weight:bold; color:white; margin:4px 0;">${totalOwnMiss}</div>
-                        <div style="font-size:10px; color:#ccc;">スパイク: <span style="color:var(--red)">${teamSpikeMiss}</span> | サーブ: <span style="color:var(--red)">${teamServeMiss}</span> | レセプ: <span style="color:var(--red)">${teamRecMiss}</span></div>
+                        <div style="font-size:10px; color:#ccc;">スパイク: <span style="color:var(--red)">${teamSpikeMiss}</span> | サーブ: <span style="color:var(--red)">${teamServeMiss}</span> | レセプション: <span style="color:var(--red)">${teamRecMiss}</span></div>
                     </div>
                 </div>
             `;
@@ -690,7 +755,6 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; 
     }
 
-    // 💡 ライブ画面のパーセンテージも新関数を呼び出して表示
     function createRow(pid, label, cat, btns, isHighlighted = false) {
         const s = players[pid][cat]; const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
         const highlightClass = isHighlighted ? 'hint-highlight' : '';
@@ -760,8 +824,17 @@
         } 
     };
 
+    // 💡 戻る（Undo）ボタンの強化：選択のやり直し対応
     window.undo = () => { 
-        if(!history.length) return; 
+        if(!history.length) {
+            // 履歴が空（試合開始直後）の場合、サーブ/レセプション選択をキャンセルして画面を再表示
+            if (serveRights !== null) {
+                serveRights = null;
+                save(); 
+            }
+            return; 
+        }
+        
         const actions = history.pop(); 
         for (let i = actions.length - 1; i >= 0; i--) {
             const last = actions[i];
@@ -784,6 +857,7 @@
             const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, rotStats: rotStats };
             set(ref(db, `teams/${currentTeamId}/matches_history/${matchId}`), matchData).then(() => { 
                 const initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: players[i].no, name: players[i].name, frontPos: players[i].frontPos, backPos: players[i].backPos, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
+                // 💡 初期化時にserveRightsをnullに戻すことで、次回ロード時に必ずスタート選択画面が出る
                 const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: liberoSettings };
                 set(gameRef, resetData); 
             });
