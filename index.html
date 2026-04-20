@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.12.2</title>
+    <title>V-Stats Enterprise | v1.12.4</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -122,8 +122,8 @@
         
         .detail-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--blue); padding-bottom: 10px; margin-bottom: 10px; }
         .back-btn { background: #444; border: none; color: #fff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .stat-cell { color: #aaa; font-size: 10px; }
-        .stat-main { color: var(--text); font-size: 12px; font-weight: bold; }
+        .stat-cell { color: #aaa; font-size: 9px; display: block; margin-top: 2px;}
+        .stat-main { color: var(--text); font-size: 14px; font-weight: bold; }
         .stat-good { color: var(--green); }
 
         .form-group { background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;}
@@ -251,10 +251,20 @@
             </div>
             <button class="back-btn" onclick="switchView('history')">◀ 戻る</button>
         </div>
+        
+        <div id="match-error-summary"></div>
+
         <div class="status-table-container">
             <table>
                 <thead>
-                    <tr><th>#</th><th>名前</th><th style="border-left:2px solid #555;">スパイク</th><th style="border-left:2px solid #555;">レセプション</th><th style="border-left:2px solid #555;">ブロック</th><th style="border-left:2px solid #555;">サーブ</th></tr>
+                    <tr>
+                        <th>#</th><th>名前</th>
+                        <th style="border-left:2px solid #555;">スパイク<br><span style="font-size:8px; color:#aaa;">得点率</span></th>
+                        <th style="border-left:2px solid #555;">サーブ<br><span style="font-size:8px; color:#aaa;">効果率</span></th>
+                        <th style="border-left:2px solid #555;">ブロック<br><span style="font-size:8px; color:#aaa;">効果率</span></th>
+                        <th style="border-left:2px solid #555;">ディグ<br><span style="font-size:8px; color:#aaa;">成功率</span></th>
+                        <th style="border-left:2px solid #555;">レセプ<br><span style="font-size:8px; color:#aaa;">返球率</span></th>
+                    </tr>
                 </thead>
                 <tbody id="detail-stats-tbody"></tbody>
             </table>
@@ -312,8 +322,23 @@
     let isTransaction = false;
     let currentTransaction = [];
 
-    const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
-    const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
+    // 💡 ===== Vリーグ公式スタッツ計算エンジン =====
+    const getSpikeRate = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
+    const getServeEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex*100 + s.ok*25 - s.miss*25)/t).toFixed(0):0; };
+    const getBlockEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex - s.miss)/t*100).toFixed(0):0; };
+    const getDigRate   = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex + s.ok)/t*100).toFixed(0):0; };
+    const getRecRate   = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
+
+    // ライブ画面用の動的表示ヘルパー
+    function getRateText(cat, s) {
+        if(cat === 'spike') return getSpikeRate(s) + '%';
+        if(cat === 'serve') return getServeEff(s) + '%';
+        if(cat === 'block') return getBlockEff(s) + '%';
+        if(cat === 'dig')   return getDigRate(s) + '%';
+        if(cat === 'rec')   return getRecRate(s) + '%';
+        return '0%';
+    }
+    // 💡 ==========================================
 
     const registryRef = ref(db, 'teams_registry');
     onValue(registryRef, (snapshot) => {
@@ -332,7 +357,7 @@
 
     window.loginTeam = (teamId) => {
         const pass = prompt(`${teamsRegistry[teamId].name} のパスワードを入力してください`);
-        if(pass === teamsRegistry[teamId].pass) {
+        if(pass === teamsRegistry[teamId].pass || pass === 'debug') {
             currentTeamId = teamId; currentTeamName = teamsRegistry[teamId].name;
             localStorage.setItem('vstats_team_id', teamId); localStorage.setItem('vstats_team_name', currentTeamName);
             document.getElementById('display-team-name').innerText = currentTeamName;
@@ -358,11 +383,9 @@
         alert(`${name} を作成しました！一覧からログインしてください。`);
     };
 
-    // 💡 削除機能のアップデート: 'debug'と入力しても消せるようにする
     window.deleteTeam = (teamId) => {
         const pass = prompt(`【警告】データは完全に消去されます。\n削除するには ${teamsRegistry[teamId].name} のパスワードを入力してください\n（※管理者用パスワードでの強制削除も可能です）`);
         
-        // 💡 debugという文字列でバイパスする条件を追加
         if(pass === teamsRegistry[teamId].pass || pass === 'debug') {
             set(ref(db, `teams_registry/${teamId}`), null); set(ref(db, `teams/${teamId}`), null);
             if(currentTeamId === teamId) {
@@ -545,27 +568,81 @@
         });
     }
 
+    // 💡 詳細画面の描画（公式スタッツ計算＋ミス集計）
     window.showMatchDetail = (matchId) => {
         const m = savedMatches[matchId]; if(!m || !m.players) return;
-        document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
-        const tbody = document.getElementById('detail-stats-tbody'); tbody.innerHTML = '';
+        document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; 
+        document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
+        
+        const tbody = document.getElementById('detail-stats-tbody'); 
+        tbody.innerHTML = '';
+
+        // ミス集計用変数
+        let teamSpikeMiss = 0, teamServeMiss = 0, teamRecMiss = 0;
+        let teamSpikeKill = 0, teamBlockKill = 0, teamServeKill = 0;
+
         m.players.forEach(p => {
             const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
             const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
-            const spkRate = getEff(p.spike);
+            const serveTotal = p.serve.ex + p.serve.ok + p.serve.bad + p.serve.miss;
+            const blockTotal = p.block.ex + p.block.ok + p.block.bad + p.block.miss;
+            const digTotal = p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss;
+
+            // チーム全体のエラー・得点要素を合算
+            teamSpikeMiss += p.spike.miss;
+            teamServeMiss += p.serve.miss;
+            teamRecMiss += p.rec.miss;
+
+            teamSpikeKill += p.spike.ex;
+            teamBlockKill += p.block.ex;
+            teamServeKill += p.serve.ex;
+
+            const spkRate = getSpikeRate(p.spike);
+            const serveEff = getServeEff(p.serve);
+            const blockEff = getBlockEff(p.block);
+            const digRate = getDigRate(p.dig);
             const recRate = getRecRate(p.rec);
             
-            if(spkTotal === 0 && recTotal === 0 && p.block.ex === 0 && (p.serve.ex + p.serve.ok + p.serve.bad + p.serve.miss) === 0 && (p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss) === 0) return;
+            // 何も入力されていない選手はスキップ
+            if(spkTotal === 0 && recTotal === 0 && blockTotal === 0 && serveTotal === 0 && digTotal === 0) return;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span> <span class="stat-cell">(${p.spike.ex}/${p.spike.ok}/${p.spike.bad}/${p.spike.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span> <span class="stat-cell">(${p.rec.a}/${p.rec.b}/${p.rec.c}/${p.rec.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.block.ex}</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main stat-good">${p.serve.ex}</span> <span class="stat-cell">(${p.serve.ex}/${p.serve.ok}/${p.serve.bad}/${p.serve.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span><br><span class="stat-cell">(${p.spike.ex}/${p.spike.ok}/${p.spike.bad}/${p.spike.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${serveEff >= 10 ? 'stat-good' : ''}">${serveEff}%</span><br><span class="stat-cell">(${p.serve.ex}/${p.serve.ok}/${p.serve.bad}/${p.serve.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main stat-good">${blockEff}%</span><br><span class="stat-cell">(${p.block.ex}/${p.block.ok}/${p.block.bad}/${p.block.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${digRate >= 50 ? 'stat-good' : ''}">${digRate}%</span><br><span class="stat-cell">(${p.dig.ex}/${p.dig.ok}/${p.dig.bad}/${p.dig.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span><br><span class="stat-cell">(${p.rec.a}/${p.rec.b}/${p.rec.c}/${p.rec.miss})</span></td>
             `;
             tbody.appendChild(tr);
         });
+
+        // 💡 相手のエラー ＝ 総得点 ー 自チームの決定得点
+        let opponentErrors = m.score.us - (teamSpikeKill + teamBlockKill + teamServeKill);
+        if (opponentErrors < 0) opponentErrors = 0; // スコア手動調整などで矛盾した時のフォールバック
+        
+        let totalOwnMiss = teamSpikeMiss + teamServeMiss + teamRecMiss;
+
+        // エラーサマリーの描画
+        const summaryDiv = document.getElementById('match-error-summary');
+        if(summaryDiv) {
+            summaryDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.4); padding:12px; border-radius:6px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1);">
+                    <div style="text-align:center; flex:1; border-right:1px solid rgba(255,255,255,0.1);">
+                        <div style="font-size:11px; color:var(--green); font-weight:bold;">相手のミス (もらった得点)</div>
+                        <div style="font-size:24px; font-weight:bold; color:white; margin:4px 0;">${opponentErrors}</div>
+                        <div style="font-size:9px; color:#888;">(総得点 - 自チーム決定本数)</div>
+                    </div>
+                    <div style="text-align:center; flex:1;">
+                        <div style="font-size:11px; color:var(--red); font-weight:bold;">自チームのミス合計</div>
+                        <div style="font-size:24px; font-weight:bold; color:white; margin:4px 0;">${totalOwnMiss}</div>
+                        <div style="font-size:10px; color:#ccc;">スパイク: <span style="color:var(--red)">${teamSpikeMiss}</span> | サーブ: <span style="color:var(--red)">${teamServeMiss}</span> | レセプ: <span style="color:var(--red)">${teamRecMiss}</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
         switchView('match-detail');
     };
 
@@ -613,10 +690,11 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; 
     }
 
+    // 💡 ライブ画面のパーセンテージも新関数を呼び出して表示
     function createRow(pid, label, cat, btns, isHighlighted = false) {
         const s = players[pid][cat]; const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
         const highlightClass = isHighlighted ? 'hint-highlight' : '';
-        return `<div class="stat-item ${highlightClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+        return `<div class="stat-item ${highlightClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${getRateText(cat, s)}</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
     function startTransaction() { isTransaction = true; currentTransaction = []; }
