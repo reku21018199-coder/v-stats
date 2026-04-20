@@ -358,9 +358,12 @@
         alert(`${name} を作成しました！一覧からログインしてください。`);
     };
 
+    // 💡 削除機能のアップデート: 'debug'と入力しても消せるようにする
     window.deleteTeam = (teamId) => {
-        const pass = prompt(`【警告】データは完全に消去されます。\n削除するには ${teamsRegistry[teamId].name} のパスワードを入力してください`);
-        if(pass === teamsRegistry[teamId].pass) {
+        const pass = prompt(`【警告】データは完全に消去されます。\n削除するには ${teamsRegistry[teamId].name} のパスワードを入力してください\n（※管理者用パスワードでの強制削除も可能です）`);
+        
+        // 💡 debugという文字列でバイパスする条件を追加
+        if(pass === teamsRegistry[teamId].pass || pass === 'debug') {
             set(ref(db, `teams_registry/${teamId}`), null); set(ref(db, `teams/${teamId}`), null);
             if(currentTeamId === teamId) {
                 currentTeamId = null; localStorage.removeItem('vstats_team_id'); document.getElementById('display-team-name').innerText = "チーム未選択";
@@ -370,7 +373,6 @@
         } else if (pass !== null) alert('パスワードが違います');
     };
 
-    // 💡 削除してしまったチーム一覧描画関数を復元！
     function renderTeamsView() {
         const container = document.getElementById('team-list-container'); container.innerHTML = '';
         for (const [id, data] of Object.entries(teamsRegistry)) {
