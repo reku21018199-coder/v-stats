@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.11.0</title>
+    <title>V-Stats Enterprise | v1.12.0</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -19,7 +19,7 @@
         
         .side-menu { position: fixed; top: 40px; left: -250px; width: 250px; height: calc(100% - 40px); background: #1e2127; border-right: 2px solid var(--blue); transition: left 0.3s ease; z-index: 1000; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
         .side-menu.open { left: 0; }
-        .menu-item { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-weight: bold; font-size: 14px; color: var(--text); }
+        .menu-item { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-weight: bold; font-size: 14px; color: var(--text); text-decoration: none; display: block;}
         
         .app-body { flex: 1; position: relative; min-height: 0; }
         .view-section { display: none; height: 100%; width: 100%; padding: 2px; box-sizing: border-box; }
@@ -35,7 +35,6 @@
         
         .selected-swap { border-color: var(--neon-blue) !important; background: #0d47a1 !important; box-shadow: inset 0 0 10px rgba(92, 182, 255, 0.5); }
         .selected-swap-bench { background: #0d47a1 !important; border-color: var(--neon-blue) !important; color: #fff !important; box-shadow: inset 0 0 10px rgba(92, 182, 255, 0.5); }
-        
         .cmd-active-card { border-color: var(--gold) !important; box-shadow: 0 0 15px rgba(229, 181, 103, 0.8) !important; transform: scale(1.02); transition: all 0.2s ease; z-index: 10;}
         .cmd-active-row { background: rgba(229, 181, 103, 0.2) !important; border-radius: 4px; box-shadow: none !important;}
 
@@ -50,7 +49,6 @@
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1px; margin-bottom: 1px; }
         .player-header input { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
         
-        /* 💡 サーバーバッジ */
         .server-badge { background: var(--orange); color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold; margin-left: 2px; box-shadow: 0 0 5px var(--orange); }
 
         .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; transition: background 0.2s ease;}
@@ -69,16 +67,15 @@
         #cmd-monitor { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 1px solid var(--gold); color: var(--text); padding: 6px 15px; border-radius: 20px; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
         .cmd-highlight { color: var(--gold); font-size: 16px; }
 
-        /* 💡 モーダル（オーバーレイ）のCSS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--card-bg); border: 1px solid var(--blue); padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;}
+        .modal-content { background: var(--card-bg); border: 1px solid var(--blue); padding: 20px; border-radius: 8px; width: 95%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center;}
         .modal-btn { display: block; width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; }
         
-        /* ポジション設定テーブル用 */
-        .pos-table { width: 100%; margin-top: 10px; font-size: 12px; text-align: left;}
-        .pos-table th { background: #111; padding: 6px; }
-        .pos-table td { padding: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .pos-select { background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; padding: 4px; border-radius: 3px; width: 100%; }
+        /* 💡 修正: 横スクロールをなくすためのレイアウト最適化 */
+        .pos-table { width: 100%; margin-top: 10px; font-size: 12px; text-align: left; table-layout: fixed; border-collapse: collapse;}
+        .pos-table th { background: #111; padding: 6px 2px; border-bottom: 1px solid #444; text-align: center;}
+        .pos-table td { padding: 6px 2px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center;}
+        .pos-select { background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; padding: 6px 2px; border-radius: 3px; width: 100%; box-sizing: border-box; font-size: 12px;}
 
         @media screen and (max-width: 650px) { 
             .main-container { flex-direction: column; }
@@ -86,7 +83,6 @@
             .court-section { grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); overflow-y: auto; }
         }
 
-        /* モード対応 */
         body.tablet-mode .court-section { gap: 5px; padding: 5px; }
         body.tablet-mode .control-section { flex: 0 0 200px; gap: 5px; } 
         body.tablet-mode .action-panel { gap: 5px; }
@@ -116,14 +112,11 @@
         body.compact-tablet-mode .score-display { font-size: 38px; }
         body.compact-tablet-mode .small-btn { font-size: 14px; height: 40px; }
 
-        /* 共通CSS */
-        #view-players, #view-history, #view-match-detail, #view-teams { flex-direction: column; background: transparent; gap: 8px; padding: 12px; overflow-y: auto;}
+        #view-history, #view-match-detail, #view-teams { flex-direction: column; background: transparent; gap: 8px; padding: 12px; overflow-y: auto;}
         .status-table-container { overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; text-align: center; font-size: 11px; }
         th { background: #1e2127; color: var(--gold); padding: 8px 6px; border: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; }
         td { background: var(--card-bg); padding: 4px; border: 1px solid rgba(255,255,255,0.05); }
-        td input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text); text-align: center; width: 50px; padding: 4px 2px; font-size: 11px; border-radius: 2px; }
-        td input:focus { border-color: var(--neon-blue); outline: none; background: rgba(0,0,0,0.5); }
 
         .history-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: background 0.2s; margin-bottom: 10px;}
         .history-card:hover { background: #2c3e50; border-color: var(--blue); }
@@ -153,10 +146,14 @@
 
 <div class="app-body">
     <div class="side-menu" id="side-menu">
-        <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none;">🏐 ライブ入力画面</div>
-        <div class="menu-item" onclick="switchView('players')" id="menu-players" style="display:none;">👥 プレイヤー一覧</div>
-        <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none;">📊 試合履歴アーカイブ</div>
-        <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: auto; color: var(--gold);">🏢 チーム管理 / 切替</div>
+        <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none; cursor:pointer;">🏐 ライブ入力画面</div>
+        <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none; cursor:pointer;">📊 試合履歴アーカイブ</div>
+        
+        <a href="?role=tablet-attack" class="menu-item" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px;">⚔️ スパイク＋ブロック入力<br><span style="font-size:10px; color:#aaa;">(タブレット専用)</span></a>
+        <a href="?role=tablet-defense" class="menu-item">🛡️ ディグ＋サーブ＋レセプ入力<br><span style="font-size:10px; color:#aaa;">(タブレット専用)</span></a>
+        <a href="?" class="menu-item">📱 全体入力 (スマホ標準)</a>
+        
+        <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: auto; color: var(--gold); cursor:pointer;">🏢 チーム管理 / 切替</div>
     </div>
 
     <div id="cmd-monitor">⌨️ <span id="cmd-text">待機中</span></div>
@@ -171,11 +168,33 @@
     </div>
 
     <div class="modal-overlay" id="pos-setting-modal">
-        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-            <h2 style="color:var(--gold); margin-top:0; font-size:18px;">ポジション詳細設定</h2>
-            <p style="font-size:11px; color:#aaa;">設定した位置にカードが自動で移動します。</p>
+        <div class="modal-content" style="max-height: 85vh; overflow-y: auto; padding: 15px;">
+            <h2 style="color:var(--gold); margin-top:0; font-size:18px;">ポジション＆リベロ設定</h2>
+            
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:4px; text-align:left; margin-bottom:15px; border: 1px solid rgba(255,255,255,0.1);">
+                <label style="color:var(--neon-blue); font-weight:bold; display:flex; align-items:center; gap:5px; font-size: 14px; cursor:pointer;">
+                    <input type="checkbox" id="libero-enable"> リベロ自動交代を有効にする
+                </label>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">交代元 (MB等)</div>
+                        <select id="libero-target" class="pos-select"></select>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">リベロ選手</div>
+                        <select id="libero-player" class="pos-select"></select>
+                    </div>
+                </div>
+            </div>
+
             <table class="pos-table">
-                <thead><tr><th>選手</th><th>前衛ポジ</th><th>後衛ポジ</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th style="width: 34%;">選手</th>
+                        <th style="width: 33%;">前衛ポジ</th>
+                        <th style="width: 33%;">後衛ポジ</th>
+                    </tr>
+                </thead>
                 <tbody id="pos-table-body"></tbody>
             </table>
             <button class="modal-btn" style="background:var(--green); margin-top:15px;" onclick="closePosSettings()">保存して閉じる</button>
@@ -217,18 +236,6 @@
                 </div>
                 <div id="sync-status">● 同期中</div>
             </div>
-        </div>
-    </div>
-
-    <div id="view-players" class="view-section">
-        <h2 style="margin: 0; font-size: 16px; color: var(--neon-blue);">プレイヤーステータス</h2>
-        <div class="status-table-container">
-            <table>
-                <thead>
-                    <tr><th>#</th><th>名前</th><th>身長</th><th>最高到達</th><th>サーブ速</th><th>スパイク速</th></tr>
-                </thead>
-                <tbody id="player-status-tbody"></tbody>
-            </table>
         </div>
     </div>
 
@@ -276,7 +283,7 @@
     let currentTeamId = localStorage.getItem('vstats_team_id') || null;
     let currentTeamName = localStorage.getItem('vstats_team_name') || "チーム未選択";
 
-    let gameRef, statusRef, historyRef;
+    let gameRef, historyRef;
     let teamsRegistry = {};
 
     const params = new URLSearchParams(window.location.search);
@@ -299,17 +306,14 @@
         actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
     }
 
-    // 💡 変数の追加: serveOrder (サーブ順に並んだ6人のID)
-    let players, courtIds, serveOrder, score, serveRights, rotStats, history = [], swapSourceId = null;
-    let playersStatus = [];
+    // 💡 変数の追加: liberoSettings
+    let players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings, history = [], swapSourceId = null;
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
 
-    // トランザクション管理用
     let isTransaction = false;
     let currentTransaction = [];
 
-    // 💡 スパイク決定率 (得点/打数 * 100)
     const getEff = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
     const getRecRate = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
 
@@ -325,7 +329,6 @@
         document.getElementById(`view-${viewId}`).classList.add('active');
         document.getElementById('side-menu').classList.remove('open');
         if(viewId === 'teams') renderTeamsView();
-        if(viewId === 'players') renderStatusTable();
         if(viewId === 'history') renderHistoryView(); 
     };
 
@@ -335,7 +338,7 @@
             currentTeamId = teamId; currentTeamName = teamsRegistry[teamId].name;
             localStorage.setItem('vstats_team_id', teamId); localStorage.setItem('vstats_team_name', currentTeamName);
             document.getElementById('display-team-name').innerText = currentTeamName;
-            document.getElementById('menu-live').style.display = 'block'; document.getElementById('menu-players').style.display = 'block'; document.getElementById('menu-history').style.display = 'block';
+            document.getElementById('menu-live').style.display = 'block'; document.getElementById('menu-history').style.display = 'block';
             attachFirebaseListeners(teamId); switchView('live');
         } else alert('パスワードが違います');
     };
@@ -345,15 +348,13 @@
         if(!name || !pass) return alert('チーム名とパスワードを入力してください');
         const teamId = 'team_' + Date.now(); set(ref(db, `teams_registry/${teamId}`), { name, pass });
         
-        // 💡 frontPos, backPos を追加
         let initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: i+1, name: `選手${i+1}`, frontPos:'', backPos:'', spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
         if (name === "福岡工業大学") {
             initPlayers[0] = { ...initPlayers[0], no: 23, name: "黒木廉" }; initPlayers[1] = { ...initPlayers[1], no: 4, name: "藤野悠歩" };
             initPlayers[2] = { ...initPlayers[2], no: 1, name: "平嶋璃音" }; initPlayers[3] = { ...initPlayers[3], no: 2, name: "田中恥真" };
             initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" }; initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
         }
-        // 💡 serveRights: null, serveOrder を追加
-        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
+        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: {enabled: false, targetId: '', liberoId: ''} };
         set(ref(db, `teams/${teamId}/live_game`), defaultData);
         document.getElementById('new-team-name').value = ''; document.getElementById('new-team-pass').value = '';
         alert(`${name} を作成しました！一覧からログインしてください。`);
@@ -365,22 +366,21 @@
             set(ref(db, `teams_registry/${teamId}`), null); set(ref(db, `teams/${teamId}`), null);
             if(currentTeamId === teamId) {
                 currentTeamId = null; localStorage.removeItem('vstats_team_id'); document.getElementById('display-team-name').innerText = "チーム未選択";
-                document.getElementById('menu-live').style.display = 'none'; document.getElementById('menu-players').style.display = 'none'; document.getElementById('menu-history').style.display = 'none';
+                document.getElementById('menu-live').style.display = 'none'; document.getElementById('menu-history').style.display = 'none';
             }
             alert('チームを削除しました');
         } else if (pass !== null) alert('パスワードが違います');
     };
 
     function attachFirebaseListeners(teamId) {
-        if(gameRef) off(gameRef); if(statusRef) off(statusRef); if(historyRef) off(historyRef);
-        gameRef = ref(db, `teams/${teamId}/live_game`); statusRef = ref(db, `teams/${teamId}/players_status`); historyRef = ref(db, `teams/${teamId}/matches_history`);
+        if(gameRef) off(gameRef); if(historyRef) off(historyRef);
+        gameRef = ref(db, `teams/${teamId}/live_game`); historyRef = ref(db, `teams/${teamId}/matches_history`);
         onValue(gameRef, (snapshot) => {
             if(!snapshot.exists()) return;
             const data = snapshot.val();
             players = data.players; courtIds = data.courtIds; score = data.score; serveRights = data.serveRights; rotStats = data.rotStats;
-            
-            // 下位互換性のため、serveOrderがなければ作る
             serveOrder = data.serveOrder || [...courtIds]; 
+            liberoSettings = data.liberoSettings || { enabled: false, targetId: '', liberoId: '' };
 
             if(document.getElementById('view-live').classList.contains('active')) { 
                 checkStartOverlay();
@@ -389,40 +389,44 @@
             } 
             if(!isSpecialRole) updateAnalysis();
         });
-        onValue(statusRef, (snapshot) => { playersStatus = snapshot.val() || Array.from({length: 15}, (_, i) => ({ id: i, height: "", reach: "", serve_speed: "", spike_speed: "" })); if(document.getElementById('view-players').classList.contains('active')) renderStatusTable(); });
         onValue(historyRef, (snapshot) => { savedMatches = snapshot.val() || {}; if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); });
     }
 
-    function save() { if(currentTeamId) set(gameRef, { players, courtIds, serveOrder, score, serveRights, rotStats }); }
-    window.saveStatus = (pid, field, value) => { playersStatus[pid][field] = value; set(statusRef, playersStatus); };
+    function save() { if(currentTeamId) set(gameRef, { players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings }); }
 
-    // 💡 スタート画面の制御
     function checkStartOverlay() {
         const overlay = document.getElementById('start-overlay');
-        if (serveRights === null) {
-            overlay.style.display = 'flex';
-        } else {
-            overlay.style.display = 'none';
-        }
+        if (serveRights === null) overlay.style.display = 'flex';
+        else overlay.style.display = 'none';
     }
 
-    window.startMatch = (right) => {
-        serveRights = right;
-        document.getElementById('start-overlay').style.display = 'none';
-        save();
+    window.startMatch = (right) => { 
+        serveRights = right; 
+        document.getElementById('start-overlay').style.display = 'none'; 
+        checkLiberoSwap();
+        courtIds = calculateCourtIds();
+        save(); 
     };
 
-    // 💡 ポジション設定モーダルの制御
+    // 💡 ポジション・リベロ設定モーダルの制御
     window.openPosSettings = () => {
+        const tSel = document.getElementById('libero-target');
+        const lSel = document.getElementById('libero-player');
+        tSel.innerHTML = '<option value="">選択</option>';
+        lSel.innerHTML = '<option value="">選択</option>';
+
         const tbody = document.getElementById('pos-table-body');
         tbody.innerHTML = '';
         players.forEach(p => {
+            tSel.innerHTML += `<option value="${p.id}" ${liberoSettings.targetId==p.id?'selected':''}>#${p.no} ${p.name}</option>`;
+            lSel.innerHTML += `<option value="${p.id}" ${liberoSettings.liberoId==p.id?'selected':''}>#${p.no} ${p.name}</option>`;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="font-weight:bold;">#${p.no} ${p.name}</td>
                 <td>
                     <select class="pos-select" id="frontPos-${p.id}">
-                        <option value="" ${p.frontPos===''?'selected':''}>未設定</option>
+                        <option value="" ${p.frontPos===''?'selected':''}>未</option>
                         <option value="L" ${p.frontPos==='L'?'selected':''}>レフト</option>
                         <option value="C" ${p.frontPos==='C'?'selected':''}>センター</option>
                         <option value="R" ${p.frontPos==='R'?'selected':''}>ライト</option>
@@ -430,7 +434,7 @@
                 </td>
                 <td>
                     <select class="pos-select" id="backPos-${p.id}">
-                        <option value="" ${p.backPos===''?'selected':''}>未設定</option>
+                        <option value="" ${p.backPos===''?'selected':''}>未</option>
                         <option value="L" ${p.backPos==='L'?'selected':''}>レフト</option>
                         <option value="C" ${p.backPos==='C'?'selected':''}>センター</option>
                         <option value="R" ${p.backPos==='R'?'selected':''}>ライト</option>
@@ -439,6 +443,7 @@
             `;
             tbody.appendChild(tr);
         });
+        document.getElementById('libero-enable').checked = liberoSettings.enabled;
         document.getElementById('pos-setting-modal').style.display = 'flex';
     };
 
@@ -447,19 +452,56 @@
             p.frontPos = document.getElementById(`frontPos-${p.id}`).value;
             p.backPos = document.getElementById(`backPos-${p.id}`).value;
         });
+        liberoSettings.enabled = document.getElementById('libero-enable').checked;
+        liberoSettings.targetId = document.getElementById('libero-target').value;
+        liberoSettings.liberoId = document.getElementById('libero-player').value;
+
         document.getElementById('pos-setting-modal').style.display = 'none';
-        courtIds = calculateCourtIds(); // 配置再計算
+        
+        checkLiberoSwap(); 
+        courtIds = calculateCourtIds(); 
         save();
     };
 
-    // 💡 自動配置アルゴリズム (serveOrder から courtIds を生成)
+    // 💡 リベロ自動交代ロジック
+    function checkLiberoSwap() {
+        if (!liberoSettings || !liberoSettings.enabled || liberoSettings.targetId === '' || liberoSettings.liberoId === '') return;
+        const tId = parseInt(liberoSettings.targetId);
+        const lId = parseInt(liberoSettings.liberoId);
+
+        let sIdxTarget = serveOrder.indexOf(tId);
+        let sIdxLibero = serveOrder.indexOf(lId);
+
+        let activeId = null;
+        let sIdx = -1;
+
+        if (sIdxTarget !== -1) { activeId = tId; sIdx = sIdxTarget; }
+        else if (sIdxLibero !== -1) { activeId = lId; sIdx = sIdxLibero; }
+
+        if (activeId === null) return; 
+
+        let shouldBeLibero = false;
+        if (sIdx === 4 || sIdx === 5) {
+            shouldBeLibero = true;
+        } else if (sIdx === 0) {
+            if (serveRights === 'them') shouldBeLibero = true;
+            else shouldBeLibero = false;
+        } else {
+            shouldBeLibero = false;
+        }
+
+        if (shouldBeLibero && activeId === tId) {
+            serveOrder[sIdx] = lId;
+        } else if (!shouldBeLibero && activeId === lId) {
+            serveOrder[sIdx] = tId;
+        }
+    }
+
     function calculateCourtIds() {
-        // serveOrder: [S1, S2, S3, S4, S5, S6]
-        const fIds = [serveOrder[1], serveOrder[2], serveOrder[3]]; // 前衛
-        const bIds = [serveOrder[4], serveOrder[5], serveOrder[0]]; // 後衛
+        const fIds = [serveOrder[1], serveOrder[2], serveOrder[3]]; 
+        const bIds = [serveOrder[4], serveOrder[5], serveOrder[0]]; 
         let displayIds = new Array(6);
 
-        // 前衛配置 (L:3, C:2, R:1)
         let fRemaining = [...fIds];
         const fSlots = { 'L': 3, 'C': 2, 'R': 1 };
         ['L', 'C', 'R'].forEach(pos => {
@@ -468,7 +510,6 @@
         });
         [3, 2, 1].forEach(slot => { if (displayIds[slot] === undefined) displayIds[slot] = fRemaining.shift(); });
 
-        // 後衛配置 (L:4, C:5, R:0)
         let bRemaining = [...bIds];
         const bSlots = { 'L': 4, 'C': 5, 'R': 0 };
         ['L', 'C', 'R'].forEach(pos => {
@@ -491,7 +532,6 @@
         });
     }
 
-    // 💡 履歴画面の完全詳細フォーマット
     window.showMatchDetail = (matchId) => {
         const m = savedMatches[matchId]; if(!m || !m.players) return;
         document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; document.getElementById('detail-subtitle').innerText = `試合日時: ${m.date}`;
@@ -524,7 +564,6 @@
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const p = players[courtIds[idx]];
             
-            // 💡 serveOrder基準でのハイライト判定
             const isFront = (p.id === serveOrder[1] || p.id === serveOrder[2] || p.id === serveOrder[3]); 
             const isBack = (p.id === serveOrder[4] || p.id === serveOrder[5] || p.id === serveOrder[0]);  
             const isServer = (p.id === serveOrder[0]);                          
@@ -542,7 +581,6 @@
                 rowsHTML += createRow(p.id, 'サーブ', 'serve', ['◎','○','△','×'], isServer); 
             }
             
-            // 💡 サーバーバッジの表示
             let badgeHTML = '';
             if (isServer && serveRights === 'us') badgeHTML = `<span class="server-badge">🏐 サーバー</span>`;
 
@@ -568,7 +606,6 @@
         return `<div class="stat-item ${highlightClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${cat==='rec'?getRecRate(s):getEff(s)}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
-    // 💡 トランザクション管理
     function startTransaction() { isTransaction = true; currentTransaction = []; }
     function commitTransaction() { isTransaction = false; if(currentTransaction.length) history.push(currentTransaction); save(); }
 
@@ -578,7 +615,6 @@
         players[pid][cat][key]++; 
         currentTransaction.push({type:'stat', pid, cat, key}); 
 
-        // 💡 評価と得点の連動
         if (type === 'ex' && ['spike', 'block', 'serve'].includes(cat)) {
             modifyScoreInternal('us', 1);
         } else if (type === 'miss') {
@@ -599,7 +635,6 @@
         let prevServeOrder = [...serveOrder];
 
         if(side==='us' && val>0 && serveRights==='them') { 
-            // 💡 ローテーション回転 (S1->S6, S2->S1...)
             serveOrder.unshift(serveOrder.pop());
             serveRights='us'; 
             rotated=true; 
@@ -608,7 +643,7 @@
         }
         
         score[side]+=val; 
-        // courtIdsの再計算
+        checkLiberoSwap(); 
         courtIds = calculateCourtIds();
 
         currentTransaction.push({type:'score', side, val, rotated, pRights, prevServeOrder}); 
@@ -620,7 +655,6 @@
         commitTransaction();
     };
     
-    // 💡 交代もserveOrder基準に修正
     window.handleSwap = (id) => { 
         if(swapSourceId === null) { swapSourceId = id; render(); } 
         else { 
@@ -635,7 +669,6 @@
         } 
     };
 
-    // 💡 トランザクション対応のUndo
     window.undo = () => { 
         if(!history.length) return; 
         const actions = history.pop(); 
@@ -660,8 +693,7 @@
             const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, rotStats: rotStats };
             set(ref(db, `teams/${currentTeamId}/matches_history/${matchId}`), matchData).then(() => { 
                 const initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: players[i].no, name: players[i].name, frontPos: players[i].frontPos, backPos: players[i].backPos, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
-                // 💡 リセット時もserveRightsをnullにしてスタート画面を出す
-                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})) };
+                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: liberoSettings };
                 set(gameRef, resetData); 
             });
         } 
@@ -770,7 +802,6 @@
     if(currentTeamId) {
         document.getElementById('display-team-name').innerText = currentTeamName;
         document.getElementById('menu-live').style.display = 'block';
-        document.getElementById('menu-players').style.display = 'block';
         document.getElementById('menu-history').style.display = 'block';
         attachFirebaseListeners(currentTeamId);
         switchView('live');
