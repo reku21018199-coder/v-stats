@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.13.3</title>
+    <title>V-Stats Enterprise | v1.13.4</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -47,7 +47,6 @@
         .score-display { font-size: 32px; font-weight: bold; color: var(--gold); line-height: 1; margin-bottom: 4px;}
         .small-btn { flex: 1; height: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 3px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         
-        /* 💡 新設：ミニコートCSS */
         .mini-court-wrap { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px; margin-top: 2px; display: flex; flex-direction: column; align-items: center; }
         .mini-court-header { font-size: 10px; color: #aaa; margin-bottom: 4px; width: 100%; text-align: center; font-weight: bold;}
         .mini-court { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 1px; width: 100%; height: 50px; background: #b86b35; border: 2px solid #fff; padding: 1px; position: relative; box-sizing: border-box;}
@@ -367,7 +366,6 @@
         actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
     }
 
-    // 💡 チームエラーのカウンターをステートに追加
     let players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings, rotationCount = 1, teamErrors = {us: 0, them: 0}, history = [], swapSourceId = null;
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
@@ -472,7 +470,7 @@
             players = data.players; courtIds = data.courtIds; score = data.score; serveRights = data.serveRights; rotStats = data.rotStats;
             serveOrder = data.serveOrder || [...courtIds]; 
             rotationCount = data.rotationCount || 1; 
-            teamErrors = data.teamErrors || {us: 0, them: 0}; // 💡 エラーカウントをロード
+            teamErrors = data.teamErrors || {us: 0, them: 0};
             
             let ls = data.liberoSettings;
             if (!ls) { liberoSettings = [{enabled:false, targetId:'', liberoId:''}, {enabled:false, targetId:'', liberoId:''}]; }
@@ -634,7 +632,6 @@
         });
     }
 
-    // 💡 詳細画面の集計ロジックを完全公式化
     window.showMatchDetail = (matchId) => {
         const m = savedMatches[matchId]; if(!m || !m.players) return;
         document.getElementById('detail-title').innerText = `${m.score.us} - ${m.score.them} vs ${m.opponent}`; 
@@ -676,7 +673,6 @@
             tbody.appendChild(tr);
         });
 
-        // 💡 相手ミスはボタンカウントそのまま、自分ミスは全エラー合算
         let opponentErrors = m.teamErrors?.them || 0; 
         let teamErrorsUs = m.teamErrors?.us || 0;
         let totalOwnMiss = teamSpikeMiss + teamServeMiss + teamRecMiss + teamErrorsUs;
@@ -736,7 +732,6 @@
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); }); document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
         
-        // 💡 ミニコート型ローテーション表示の描画
         const rotContainer = document.getElementById('rot-container');
         if(rotContainer && players.length > 0 && serveOrder.length === 6) {
             rotContainer.innerHTML = `
@@ -790,13 +785,11 @@
         commitTransaction();
     };
 
-    // 💡 チームエラーボタン処理の修正
     window.addTeamError = (errSide) => {
         startTransaction();
         teamErrors[errSide]++;
         currentTransaction.push({type: 'teamError', errSide: errSide});
         
-        // 自分(us)のエラーなら相手(them)に得点。相手(them)のエラーなら自分(us)に得点。
         const pointSide = (errSide === 'us') ? 'them' : 'us';
         modifyScoreInternal(pointSide, 1);
         commitTransaction();
@@ -809,7 +802,8 @@
         let prevRotationCount = rotationCount; 
 
         if(side==='us' && val>0 && serveRights==='them') { 
-            serveOrder.unshift(serveOrder.pop());
+            // 💡 修正箇所：ローテーションを右回り（時計回り）に
+            serveOrder.push(serveOrder.shift()); 
             serveRights='us'; 
             rotated=true; 
             rotationCount = rotationCount === 6 ? 1 : rotationCount + 1; 
@@ -865,7 +859,7 @@
                 if (last.prevRotationCount !== undefined) rotationCount = last.prevRotationCount; 
                 courtIds = calculateCourtIds();
             } else if (last.type==='teamError') {
-                teamErrors[last.errSide]--; // 💡 エラーボタンの巻き戻し対応
+                teamErrors[last.errSide]--;
             }
         }
         save(); 
