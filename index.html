@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.13.0</title>
+    <title>V-Stats Enterprise | v1.13.1</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -21,7 +21,6 @@
         .side-menu.open { left: 0; }
         .menu-item { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-weight: bold; font-size: 14px; color: var(--text); text-decoration: none; display: block;}
         
-        /* 💡 アコーディオンメニュー用CSS */
         .sub-menu { display: none; flex-direction: column; background: rgba(0,0,0,0.2); }
         .sub-menu.open { display: flex; }
         .menu-sub-item { padding: 10px 20px 10px 40px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-size: 12px; color: var(--text); text-decoration: none; display: block; }
@@ -155,21 +154,21 @@
         <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none; cursor:pointer;">🏐 入力画面</div>
         <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none; cursor:pointer;">📊 試合履歴アーカイブ</div>
         
-        <div class="menu-item" onclick="toggleSubMenu('tablet-menu')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; display:flex; justify-content:space-between;">📱 タブレット入力 <span>▼</span></div>
+        <div class="menu-item" onclick="toggleSubMenu('tablet-menu')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; display:flex; justify-content:space-between;">📱 タブレット入力 <span style="font-size: 10px;">▼</span></div>
         <div id="tablet-menu" class="sub-menu">
             <a href="?role=tablet-attack" class="menu-sub-item">⚔️ スパイク＋ブロック入力</a>
             <a href="?role=tablet-defense" class="menu-sub-item">🛡️ ディグ＋サーブ＋レセプション入力</a>
             <a href="?role=tablet" class="menu-sub-item">🏐 全体入力</a>
         </div>
 
-        <div class="menu-item" onclick="toggleSubMenu('mobile-menu')" style="display:flex; justify-content:space-between;">📱 スマホ入力 <span>▼</span></div>
+        <div class="menu-item" onclick="toggleSubMenu('mobile-menu')" style="display:flex; justify-content:space-between;">📱 スマホ入力 <span style="font-size: 10px;">▼</span></div>
         <div id="mobile-menu" class="sub-menu">
             <a href="?role=attack" class="menu-sub-item">⚔️ スパイク＋ブロック入力</a>
             <a href="?role=defense" class="menu-sub-item">🛡️ ディグ＋サーブ＋レセプション入力</a>
             <a href="?" class="menu-sub-item">🏐 全体入力</a>
         </div>
 
-        <div class="menu-item" onclick="toggleSubMenu('pc-menu')" style="display:flex; justify-content:space-between;">💻 PC入力 <span>▼</span></div>
+        <div class="menu-item" onclick="toggleSubMenu('pc-menu')" style="display:flex; justify-content:space-between;">💻 PC入力 <span style="font-size: 10px;">▼</span></div>
         <div id="pc-menu" class="sub-menu">
             <a href="?role=attack" class="menu-sub-item">⚔️ スパイク＋ブロック入力</a>
             <a href="?role=defense" class="menu-sub-item">🛡️ ディグ＋サーブ＋レセプション入力</a>
@@ -385,7 +384,6 @@
 
     window.toggleMenu = () => { document.getElementById('side-menu').classList.toggle('open'); };
     
-    // 💡 サブメニューの開閉関数
     window.toggleSubMenu = (id) => {
         const el = document.getElementById(id);
         el.classList.toggle('open');
@@ -421,12 +419,13 @@
             initPlayers[2] = { ...initPlayers[2], no: 1, name: "平嶋璃音" }; initPlayers[3] = { ...initPlayers[3], no: 2, name: "田中恥真" };
             initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" }; initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
         }
-        // 💡 2人分のリベロ設定を初期化
+        
+        // 💡 nullスタートを空文字("")に変更してバグ回避
         const defaultLiberoSettings = [
             {enabled: false, targetId: '', liberoId: ''},
             {enabled: false, targetId: '', liberoId: ''}
         ];
-        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: defaultLiberoSettings };
+        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: "", rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: defaultLiberoSettings };
         set(ref(db, `teams/${teamId}/live_game`), defaultData);
         document.getElementById('new-team-name').value = ''; document.getElementById('new-team-pass').value = '';
         alert(`${name} を作成しました！一覧からログインしてください。`);
@@ -464,7 +463,6 @@
             players = data.players; courtIds = data.courtIds; score = data.score; serveRights = data.serveRights; rotStats = data.rotStats;
             serveOrder = data.serveOrder || [...courtIds]; 
             
-            // 💡 後方互換性（古いデータ構造を配列に変換）
             let ls = data.liberoSettings;
             if (!ls) {
                 liberoSettings = [{enabled:false, targetId:'', liberoId:''}, {enabled:false, targetId:'', liberoId:''}];
@@ -493,7 +491,8 @@
 
     function checkStartOverlay() {
         const overlay = document.getElementById('start-overlay');
-        if (serveRights === null) overlay.style.display = 'flex';
+        // 💡 null か 空文字の時に表示
+        if (!serveRights || serveRights === "") overlay.style.display = 'flex';
         else overlay.style.display = 'none';
     }
 
@@ -506,7 +505,6 @@
     };
 
     window.openPosSettings = () => {
-        // 💡 2人分のセレクトボックスを初期化
         for(let i=0; i<2; i++) {
             const tSel = document.getElementById(`libero-target-${i}`);
             const lSel = document.getElementById(`libero-player-${i}`);
@@ -824,12 +822,11 @@
         } 
     };
 
-    // 💡 戻る（Undo）ボタンの強化：選択のやり直し対応
+    // 💡 スタート選択をやり直せるようにUndoを強化
     window.undo = () => { 
         if(!history.length) {
-            // 履歴が空（試合開始直後）の場合、サーブ/レセプション選択をキャンセルして画面を再表示
-            if (serveRights !== null) {
-                serveRights = null;
+            if (serveRights && serveRights !== "") {
+                serveRights = "";
                 save(); 
             }
             return; 
@@ -857,8 +854,8 @@
             const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, rotStats: rotStats };
             set(ref(db, `teams/${currentTeamId}/matches_history/${matchId}`), matchData).then(() => { 
                 const initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: players[i].no, name: players[i].name, frontPos: players[i].frontPos, backPos: players[i].backPos, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
-                // 💡 初期化時にserveRightsをnullに戻すことで、次回ロード時に必ずスタート選択画面が出る
-                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: null, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: liberoSettings };
+                // 💡 初期化時にserveRightsを空に戻すことでスタート選択画面を出す
+                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: "", rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: liberoSettings };
                 set(gameRef, resetData); 
             });
         } 
