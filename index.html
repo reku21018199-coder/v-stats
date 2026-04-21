@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.15.0</title>
+    <title>V-Stats Enterprise | v1.15.2</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -35,13 +35,11 @@
         .control-section { flex: 0 0 150px; display: flex; flex-direction: column; gap: 2px; height: 100%; min-height: 0; }
         .action-panel { flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
         
-        /* 💡 ターンインジケーター */
         .turn-indicator { padding: 6px; text-align: center; font-weight: bold; border-radius: 4px; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .turn-serve { background: linear-gradient(135deg, #e89a5e, #d67a3a); color: #fff; border: 1px solid #ffb37b;}
         .turn-receive { background: linear-gradient(135deg, #5cb6ff, #2980b9); color: #fff; border: 1px solid #8ecfff; }
         .turn-rally { background: linear-gradient(135deg, #5eb67d, #3c8a57); color: #fff; border: 1px solid #8be6a8; }
 
-        /* 💡 パルス発光アニメーション */
         @keyframes pulse-serve {
             0% { box-shadow: 0 0 0px var(--orange); border-color: transparent; background: transparent; }
             50% { box-shadow: inset 0 0 10px var(--orange), 0 0 8px var(--orange); border-color: var(--orange); background: rgba(232, 154, 94, 0.15); }
@@ -60,7 +58,6 @@
         .serve-turn-highlight { animation: pulse-serve 1.5s infinite; border-radius: 4px; margin: 1px 0; padding: 1px; }
         .rec-turn-highlight { animation: pulse-rec 1.5s infinite; border-radius: 4px; margin: 1px 0; padding: 1px; }
         .dig-turn-highlight { animation: pulse-dig 1.5s infinite; border-radius: 4px; margin: 1px 0; padding: 1px; }
-        /* -------------------------------------- */
 
         #bench-list { display: none; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); max-height: 150px; overflow-y: auto; border-radius: 4px; }
         .bench-item { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: bold; text-align: center; color: var(--text); cursor:pointer;}
@@ -87,13 +84,9 @@
         .player-card { background: var(--card-bg); border-radius: 3px; padding: 2px 4px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative;}
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1px; margin-bottom: 1px; }
         .player-header input { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
-        
-        .server-badge { background: var(--orange); color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold; margin-left: 2px; box-shadow: 0 0 5px var(--orange); }
 
         .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; transition: background 0.2s ease; border: 1px solid transparent;}
-        .hint-highlight { background: rgba(92, 182, 255, 0.15); box-shadow: inset 3px 0 0 var(--neon-blue); border-radius: 0 2px 2px 0; padding-left: 3px;}
-        .hint-highlight .stat-label { color: var(--green); font-size: 10px; }
-
+        
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; transition: all 0.2s ease;}
         .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; transition: color 0.2s ease;}
@@ -132,7 +125,6 @@
         body.tablet-mode .player-header input { font-size: 14px; width: 45%; }
         body.tablet-mode .stat-item { gap: 3px; padding: 3px 0; }
         body.tablet-mode .stat-label, body.tablet-mode .rate-txt { font-size: 12px; }
-        body.tablet-mode .hint-highlight .stat-label { font-size: 13px; }
         body.tablet-mode .btn-grid { gap: 3px; }
         body.tablet-mode .btn { font-size: 14px; padding: 8px 0; border-radius: 4px; }
         body.tablet-mode .num-row { font-size: 16px; margin-top: 4px; }
@@ -146,7 +138,6 @@
         body.compact-tablet-mode .player-header input { font-size: 13px; }
         body.compact-tablet-mode .stat-item { gap: 2px; padding: 2px 0; }
         body.compact-tablet-mode .stat-label, body.compact-tablet-mode .rate-txt { font-size: 11px; }
-        body.compact-tablet-mode .hint-highlight .stat-label { font-size: 12px; }
         body.compact-tablet-mode .btn { font-size: 12px; padding: 6px 0; border-radius: 3px; }
         body.compact-tablet-mode .num-row { font-size: 15px; margin-top: 3px; }
         body.compact-tablet-mode .score-display { font-size: 38px; }
@@ -387,7 +378,6 @@
         actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
     }
 
-    // 💡 rallyPhase（ラリー状態）をステートに追加
     let players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings, rotationCount = 1, teamErrors = {us: 0, them: 0}, rallyPhase = "", history = [], swapSourceId = null;
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
@@ -498,7 +488,6 @@
             rotationCount = data.rotationCount || 1; 
             teamErrors = data.teamErrors || {us: 0, them: 0};
             
-            // 💡 ラリーフェーズのロードと互換性対応
             rallyPhase = data.rallyPhase || (serveRights === 'us' ? 'serve' : (serveRights === 'them' ? 'reception' : ''));
             
             players.forEach(p => { if (!p.displayStats) p.displayStats = {spike:true, block:true, serve:true, dig:true, rec:true}; });
@@ -532,7 +521,7 @@
 
     window.startMatch = (right) => { 
         serveRights = right; 
-        rallyPhase = right === 'us' ? 'serve' : 'reception'; // 💡 スタート時にフェーズセット
+        rallyPhase = right === 'us' ? 'serve' : 'reception'; 
         document.getElementById('start-overlay').style.display = 'none'; 
         checkLiberoSwap();
         courtIds = calculateCourtIds();
@@ -758,7 +747,6 @@
     function render() {
         const court = document.getElementById('court'); court.innerHTML = '';
         
-        // 💡 ターンインジケーターの描画
         const turnBox = document.getElementById('turn-indicator-box');
         if (turnBox) {
             if (rallyPhase === 'serve') {
@@ -774,28 +762,22 @@
 
         [3, 2, 1, 4, 5, 0].forEach(idx => {
             const p = players[courtIds[idx]];
-            const isFront = (p.id === serveOrder[1] || p.id === serveOrder[2] || p.id === serveOrder[3]); 
-            const isBack = (p.id === serveOrder[4] || p.id === serveOrder[5] || p.id === serveOrder[0]);  
-            const isServer = (p.id === serveOrder[0]);                          
             const d = p.displayStats;
 
             const card = document.createElement('div'); card.className = `player-card ${swapSourceId === p.id ? 'selected-swap' : ''}`; card.id = `card-${p.id}`; 
             let rowsHTML = '';
             
             if (showAttack) { 
-                if (d.spike) rowsHTML += createRow(p.id, 'スパイク', 'spike', ['◎','○','△','×'], isFront); 
-                if (d.block) rowsHTML += createRow(p.id, 'ブロック', 'block', ['◎','○','△','×'], isFront); 
+                if (d.spike) rowsHTML += createRow(p.id, 'スパイク', 'spike', ['◎','○','△','×']); 
+                if (d.block) rowsHTML += createRow(p.id, 'ブロック', 'block', ['◎','○','△','×']); 
             }
             if (showDefense) { 
-                if (d.rec)   rowsHTML += createRow(p.id, 'レセプション', 'rec', ['A','B','C','×'], true); 
-                if (d.dig)   rowsHTML += createRow(p.id, 'ディグ', 'dig', ['◎','○','△','×'], isBack); 
-                if (d.serve) rowsHTML += createRow(p.id, 'サーブ', 'serve', ['◎','○','△','×'], isServer); 
+                if (d.rec)   rowsHTML += createRow(p.id, 'レセプション', 'rec', ['A','B','C','×']); 
+                if (d.dig)   rowsHTML += createRow(p.id, 'ディグ', 'dig', ['◎','○','△','×']); 
+                if (d.serve) rowsHTML += createRow(p.id, 'サーブ', 'serve', ['◎','○','△','×']); 
             }
             
-            let badgeHTML = '';
-            if (isServer && serveRights === 'us') badgeHTML = `<span class="server-badge">🏐 サーバー</span>`;
-
-            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}">${badgeHTML}<span style="margin-left:auto; cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
+            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="margin-left:auto; cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); }); document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
         
@@ -829,12 +811,10 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; 
     }
 
-    // 💡 行の生成とスマートハイライトの適用
-    function createRow(pid, label, cat, btns, isHighlighted = false) {
+    function createRow(pid, label, cat, btns) {
         const s = players[pid][cat]; const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
-        let extraClass = isHighlighted ? 'hint-highlight ' : '';
+        let extraClass = '';
         
-        // 💡 ターンの状態に応じた強烈なハイライト（パルス発光）
         if (serveRights !== "") {
             if (rallyPhase === 'serve' && cat === 'serve' && pid === serveOrder[0]) {
                 extraClass += 'serve-turn-highlight ';
@@ -877,7 +857,6 @@
             pointEnded = true;
         }
         
-        // 💡 ポイントが終了していないなら、ラリーフェーズへ移行（ディグを光らせる）
         if (!pointEnded && serveRights !== "") {
             rallyPhase = 'rally';
         }
@@ -915,7 +894,6 @@
         
         score[side]+=val; 
         
-        // 💡 ポイントが入ったらフェーズをリセット
         rallyPhase = (serveRights === 'us') ? 'serve' : 'reception';
 
         checkLiberoSwap(); 
@@ -948,7 +926,7 @@
         if(!history.length) {
             if (serveRights && serveRights !== "") {
                 serveRights = "";
-                rallyPhase = ""; // 💡 フェーズも初期化
+                rallyPhase = ""; 
                 save(); 
             }
             return; 
