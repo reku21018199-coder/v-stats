@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.13.1</title>
+    <title>V-Stats Enterprise | v1.13.2</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -175,7 +175,9 @@
             <a href="?" class="menu-sub-item">🏐 全体入力</a>
         </div>
         
-        <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: 20px; color: var(--gold); cursor:pointer;">🏢 チーム変更</div>
+        <div class="menu-item" onclick="openPosSettings()" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; cursor:pointer; color: var(--gold);">⚙️ ポジション＆リベロ設定</div>
+        
+        <div class="menu-item" onclick="switchView('teams')" style="border-top: 2px solid #444; margin-top: 5px; color: var(--neon-blue); cursor:pointer;">🏢 チーム変更</div>
     </div>
 
     <div id="cmd-monitor">⌨️ <span id="cmd-text">待機中</span></div>
@@ -262,10 +264,14 @@
                     <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
                 </div>
                 <div style="display:flex; gap:2px; margin-top:2px;">
-                    <button class="small-btn" style="background:var(--red);" onclick="addTeamError('us')">自分チームミス</button>
-                    <button class="small-btn" style="background:var(--green);" onclick="addTeamError('them')">相手チームミス</button>
+                    <button class="small-btn" style="background:var(--red);" onclick="addTeamError('them')">自分チームミス</button>
+                    <button class="small-btn" style="background:var(--green);" onclick="addTeamError('us')">相手チームミス</button>
                 </div>
-                <button class="small-btn" style="width:100%; margin-top:2px; background:#444;" onclick="openPosSettings()">⚙️ ポジション設定</button>
+                
+                <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:3px; padding:4px; margin-top:2px; text-align:center;">
+                    <div style="font-size:11px; color:#aaa; margin-bottom:2px;">現在のローテーション</div>
+                    <div style="font-size:14px; font-weight:bold; color:var(--neon-blue);">R<span id="rot-num">1</span> <span style="font-size:11px; color:#fff; margin-left:5px;">(サーバー: <span id="rot-server"></span>)</span></div>
+                </div>
                 
                 <div id="live-analysis" style="margin-top:2px;"></div>
                 <div id="action-buttons">
@@ -354,7 +360,8 @@
         actionBtns.querySelectorAll('button').forEach(btn => { btn.style.height = '100%'; btn.style.fontSize = '16px'; });
     }
 
-    let players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings, history = [], swapSourceId = null;
+    // 💡 rotationCount 変数を追加
+    let players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings, rotationCount = 1, history = [], swapSourceId = null;
     let savedMatches = {}; 
     let cmdState = { numStr: "", playerId: null, category: null };
 
@@ -420,12 +427,12 @@
             initPlayers[4] = { ...initPlayers[4], no: 3, name: "兼崎晴人" }; initPlayers[5] = { ...initPlayers[5], no: 5, name: "溝口拳志郎" };
         }
         
-        // 💡 nullスタートを空文字("")に変更してバグ回避
         const defaultLiberoSettings = [
             {enabled: false, targetId: '', liberoId: ''},
             {enabled: false, targetId: '', liberoId: ''}
         ];
-        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: "", rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: defaultLiberoSettings };
+        // 💡 rotationCount を初期状態に追加
+        const defaultData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: "", rotationCount: 1, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: defaultLiberoSettings };
         set(ref(db, `teams/${teamId}/live_game`), defaultData);
         document.getElementById('new-team-name').value = ''; document.getElementById('new-team-pass').value = '';
         alert(`${name} を作成しました！一覧からログインしてください。`);
@@ -462,6 +469,7 @@
             const data = snapshot.val();
             players = data.players; courtIds = data.courtIds; score = data.score; serveRights = data.serveRights; rotStats = data.rotStats;
             serveOrder = data.serveOrder || [...courtIds]; 
+            rotationCount = data.rotationCount || 1; // 💡 ローテーションカウントをロード
             
             let ls = data.liberoSettings;
             if (!ls) {
@@ -487,11 +495,10 @@
         });
     }
 
-    function save() { if(currentTeamId) set(gameRef, { players, courtIds, serveOrder, score, serveRights, rotStats, liberoSettings }); }
+    function save() { if(currentTeamId) set(gameRef, { players, courtIds, serveOrder, score, serveRights, rotationCount, rotStats, liberoSettings }); }
 
     function checkStartOverlay() {
         const overlay = document.getElementById('start-overlay');
-        // 💡 null か 空文字の時に表示
         if (!serveRights || serveRights === "") overlay.style.display = 'flex';
         else overlay.style.display = 'none';
     }
@@ -543,6 +550,8 @@
             `;
             tbody.appendChild(tr);
         });
+        
+        document.getElementById('side-menu').classList.remove('open');
         document.getElementById('pos-setting-modal').style.display = 'flex';
     };
 
@@ -740,6 +749,12 @@
             card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}">${badgeHTML}<span style="margin-left:auto; cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
             document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); }); document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
         });
+        
+        // 💡 ローテーションとサーバー情報の表示更新
+        document.getElementById('rot-num').innerText = rotationCount;
+        const currentServer = players[serveOrder[0]];
+        document.getElementById('rot-server').innerText = currentServer ? `#${currentServer.no} ${currentServer.name}` : "-";
+
         const blist = document.getElementById('bench-list'); blist.innerHTML = '';
         players.forEach(p => { 
             if(!courtIds.includes(p.id)) { 
@@ -786,11 +801,13 @@
         let rotated = false; 
         let pRights = serveRights; 
         let prevServeOrder = [...serveOrder];
+        let prevRotationCount = rotationCount; // 💡 巻き戻し用に保存
 
         if(side==='us' && val>0 && serveRights==='them') { 
             serveOrder.unshift(serveOrder.pop());
             serveRights='us'; 
             rotated=true; 
+            rotationCount = rotationCount === 6 ? 1 : rotationCount + 1; // 💡 ローテーションカウントを更新
         } else if(side==='them' && val>0) {
             serveRights='them'; 
         }
@@ -799,7 +816,7 @@
         checkLiberoSwap(); 
         courtIds = calculateCourtIds();
 
-        currentTransaction.push({type:'score', side, val, rotated, pRights, prevServeOrder}); 
+        currentTransaction.push({type:'score', side, val, rotated, pRights, prevServeOrder, prevRotationCount}); 
     }
 
     window.modifyScore = (side, val) => {
@@ -822,7 +839,6 @@
         } 
     };
 
-    // 💡 スタート選択をやり直せるようにUndoを強化
     window.undo = () => { 
         if(!history.length) {
             if (serveRights && serveRights !== "") {
@@ -841,6 +857,7 @@
                 score[last.side]-=last.val; 
                 serveRights = last.pRights;
                 if (last.prevServeOrder) serveOrder = [...last.prevServeOrder];
+                if (last.prevRotationCount !== undefined) rotationCount = last.prevRotationCount; // 💡 カウントを巻き戻し
                 courtIds = calculateCourtIds();
             }
         }
@@ -854,8 +871,7 @@
             const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, rotStats: rotStats };
             set(ref(db, `teams/${currentTeamId}/matches_history/${matchId}`), matchData).then(() => { 
                 const initPlayers = Array.from({length: 15}, (_, i) => ({ id: i, no: players[i].no, name: players[i].name, frontPos: players[i].frontPos, backPos: players[i].backPos, spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0} }));
-                // 💡 初期化時にserveRightsを空に戻すことでスタート選択画面を出す
-                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: "", rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: liberoSettings };
+                const resetData = { players: initPlayers, courtIds: [0,1,2,3,4,5], serveOrder: [0,1,2,3,4,5], score: {us:0, them:0}, serveRights: "", rotationCount: 1, rotStats: Array.from({length: 7}, () => ({plus:0, minus:0})), liberoSettings: liberoSettings };
                 set(gameRef, resetData); 
             });
         } 
