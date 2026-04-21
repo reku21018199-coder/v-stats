@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v1.13.4</title>
+    <title>V-Stats Enterprise | v1.13.5</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -69,7 +69,7 @@
 
         .stat-header { display: flex; justify-content: space-between; align-items: center; line-height: 1; }
         .stat-label { font-size: 9px; color: var(--gold); font-weight: bold; scale: 0.9; transform-origin: left; transition: all 0.2s ease;}
-        .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; }
+        .rate-txt { font-size: 9px; color: #aaa; scale: 0.85; transition: color 0.2s ease;}
         
         .btn-grid, .num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
         .btn { border: none; border-radius: 2px; color: #fff; font-size: 10px; padding: 3px 0; font-weight: bold; cursor: pointer; }
@@ -379,15 +379,6 @@
     const getDigRate   = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex + s.ok)/t*100).toFixed(0):0; };
     const getRecRate   = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
 
-    function getRateText(cat, s) {
-        if(cat === 'spike') return getSpikeRate(s) + '%';
-        if(cat === 'serve') return getServeEff(s) + '%';
-        if(cat === 'block') return getBlockEff(s) + '%';
-        if(cat === 'dig')   return getDigRate(s) + '%';
-        if(cat === 'rec')   return getRecRate(s) + '%';
-        return '0%';
-    }
-
     const registryRef = ref(db, 'teams_registry');
     onValue(registryRef, (snapshot) => {
         teamsRegistry = snapshot.val() || {};
@@ -661,14 +652,20 @@
             
             if(spkTotal === 0 && recTotal === 0 && blockTotal === 0 && serveTotal === 0 && digTotal === 0) return;
 
+            const spkClass = spkRate >= 40 ? 'stat-good' : (spkRate < 0 ? 'stat-bad' : '');
+            const srvClass = serveEff >= 10 ? 'stat-good' : (serveEff < 0 ? 'stat-bad' : '');
+            const blkClass = blockEff >= 10 ? 'stat-good' : (blockEff < 0 ? 'stat-bad' : '');
+            const digClass = digRate >= 50 ? 'stat-good' : (digRate < 0 ? 'stat-bad' : '');
+            const recClass = recRate >= 60 ? 'stat-good' : (recRate < 0 ? 'stat-bad' : '');
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${spkRate >= 40 ? 'stat-good' : ''}">${spkRate}%</span><br><span class="stat-cell">(${p.spike.ex}/${p.spike.ok}/${p.spike.bad}/${p.spike.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${serveEff >= 10 ? 'stat-good' : ''}">${serveEff}%</span><br><span class="stat-cell">(${p.serve.ex}/${p.serve.ok}/${p.serve.bad}/${p.serve.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main stat-good">${blockEff}%</span><br><span class="stat-cell">(${p.block.ex}/${p.block.ok}/${p.block.bad}/${p.block.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${digRate >= 50 ? 'stat-good' : ''}">${digRate}%</span><br><span class="stat-cell">(${p.dig.ex}/${p.dig.ok}/${p.dig.bad}/${p.dig.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${recRate >= 60 ? 'stat-good' : ''}">${recRate}%</span><br><span class="stat-cell">(${p.rec.a}/${p.rec.b}/${p.rec.c}/${p.rec.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${spkClass}">${spkRate}%</span><br><span class="stat-cell">(${p.spike.ex}/${p.spike.ok}/${p.spike.bad}/${p.spike.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${srvClass}">${serveEff}%</span><br><span class="stat-cell">(${p.serve.ex}/${p.serve.ok}/${p.serve.bad}/${p.serve.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${blkClass}">${blockEff}%</span><br><span class="stat-cell">(${p.block.ex}/${p.block.ok}/${p.block.bad}/${p.block.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${digClass}">${digRate}%</span><br><span class="stat-cell">(${p.dig.ex}/${p.dig.ok}/${p.dig.bad}/${p.dig.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${recClass}">${recRate}%</span><br><span class="stat-cell">(${p.rec.a}/${p.rec.b}/${p.rec.c}/${p.rec.miss})</span></td>
             `;
             tbody.appendChild(tr);
         });
@@ -762,10 +759,22 @@
         document.getElementById('score-us').innerText = score.us; document.getElementById('score-them').innerText = score.them; 
     }
 
+    // 💡 ライブ画面のパーセンテージも赤色警告対応
     function createRow(pid, label, cat, btns, isHighlighted = false) {
         const s = players[pid][cat]; const counts = (cat==='rec') ? [s.a, s.b, s.c, s.miss] : [s.ex, s.ok, s.bad, s.miss];
         const highlightClass = isHighlighted ? 'hint-highlight' : '';
-        return `<div class="stat-item ${highlightClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt">${getRateText(cat, s)}</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+        
+        let val = 0;
+        if(cat === 'spike') val = getSpikeRate(s);
+        else if(cat === 'serve') val = getServeEff(s);
+        else if(cat === 'block') val = getBlockEff(s);
+        else if(cat === 'dig')   val = getDigRate(s);
+        else if(cat === 'rec')   val = getRecRate(s);
+        
+        const rateColor = val < 0 ? 'var(--red)' : '#aaa';
+        const rateWeight = val < 0 ? 'bold' : 'normal';
+
+        return `<div class="stat-item ${highlightClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt" style="color:${rateColor}; font-weight:${rateWeight};">${val}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
     function startTransaction() { isTransaction = true; currentTransaction = []; }
@@ -802,7 +811,6 @@
         let prevRotationCount = rotationCount; 
 
         if(side==='us' && val>0 && serveRights==='them') { 
-            // 💡 修正箇所：ローテーションを右回り（時計回り）に
             serveOrder.push(serveOrder.shift()); 
             serveRights='us'; 
             rotated=true; 
@@ -838,6 +846,7 @@
         } 
     };
 
+    // 💡 戻る（Undo）ボタン：マイナス点数への落下を防御
     window.undo = () => { 
         if(!history.length) {
             if (serveRights && serveRights !== "") {
@@ -854,12 +863,14 @@
                 players[last.pid][last.cat][last.key]--;
             } else if (last.type==='score') {
                 score[last.side]-=last.val; 
+                if(score[last.side] < 0) score[last.side] = 0; // 🛑 0点未満に下がらないように防御
                 serveRights = last.pRights;
                 if (last.prevServeOrder) serveOrder = [...last.prevServeOrder];
                 if (last.prevRotationCount !== undefined) rotationCount = last.prevRotationCount; 
                 courtIds = calculateCourtIds();
             } else if (last.type==='teamError') {
                 teamErrors[last.errSide]--;
+                if(teamErrors[last.errSide] < 0) teamErrors[last.errSide] = 0; // 🛑 エラー回数も防御
             }
         }
         save(); 
