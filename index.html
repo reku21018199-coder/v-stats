@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats Enterprise | v2.0.0</title>
+    <title>V-Stats Enterprise | v2.1.0</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -180,9 +180,8 @@
         <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none; cursor:pointer;">🏐 入力画面</div>
         <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none; cursor:pointer;">📊 試合履歴アーカイブ</div>
         
-        <!-- 新規追加：選手登録・個人成績ページ -->
         <div class="menu-item" onclick="switchView('roster')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; cursor:pointer;">👥 選手名簿・登録</div>
-        <div class="menu-item" onclick="switchView('personal-stats')" style="cursor:pointer; color: var(--green);">📈 個人成績 (月間/累計)</div>
+        <div class="menu-item" onclick="switchView('personal-stats')" style="cursor:pointer; color: var(--green);">📈 個人成績 (月間/日別)</div>
         
         <div class="menu-item" onclick="toggleSubMenu('tablet-menu')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; display:flex; justify-content:space-between;">📱 タブレット入力 <span style="font-size: 10px;">▼</span></div>
         <div id="tablet-menu" class="sub-menu">
@@ -318,7 +317,18 @@
                 
                 <div id="turn-indicator-box"></div>
 
+                <!-- 💡 復元：点数増減ボタン -->
                 <div class="score-box">
+                    <div style="display:flex; justify-content:space-between; padding: 0 10px; margin-bottom: 2px;">
+                        <div style="display:flex; gap:2px;">
+                            <button class="small-btn" style="width:25px; height:20px; padding:0;" onclick="modifyScore('us', 1)">+</button>
+                            <button class="small-btn" style="width:25px; height:20px; padding:0; background:rgba(255,255,255,0.05);" onclick="modifyScore('us', -1)">-</button>
+                        </div>
+                        <div style="display:flex; gap:2px;">
+                            <button class="small-btn" style="width:25px; height:20px; padding:0;" onclick="modifyScore('them', 1)">+</button>
+                            <button class="small-btn" style="width:25px; height:20px; padding:0; background:rgba(255,255,255,0.05);" onclick="modifyScore('them', -1)">-</button>
+                        </div>
+                    </div>
                     <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
                 </div>
                 
@@ -327,12 +337,17 @@
                     <button class="small-btn" style="background:var(--green);" onclick="addTeamError('them')">相手のミス</button>
                 </div>
                 
+                <!-- 💡 復元：強制ローテボタン -->
+                <div style="display:flex; gap:2px; margin-top:2px;">
+                    <button class="small-btn" onclick="forceRotate(1)">🔄 ローテ進める</button>
+                    <button class="small-btn" onclick="forceRotate(-1)">🔄 ローテ戻す</button>
+                </div>
+
                 <div id="rot-container"></div>
                 
                 <div id="live-analysis" style="margin-top:auto;"></div>
                 <div id="action-buttons">
                     <button class="small-btn" onclick="undo()">戻る</button>
-                    <!-- 新規追加：リセットボタン -->
                     <button class="small-btn" style="background:var(--red);" onclick="resetBoard()">リセット</button>
                     <button class="small-btn" style="background:var(--gold); color:#000;" onclick="finishGame()">集計保存</button>
                 </div>
@@ -431,7 +446,7 @@
 
     const getSpikeRate = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
     const getServeEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex*100 + s.ok*25 - s.miss*25)/t).toFixed(0):0; };
-    const getBlockEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex - s.miss)/t*100).toFixed(0):0; };
+    const getBlockEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex)/t*100).toFixed(0):0; };
     const getDigRate   = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex + s.ok)/t*100).toFixed(0):0; };
     const getRecRate   = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
     const getTossRate  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex+s.ok)/t*100).toFixed(0):0; };
@@ -756,7 +771,6 @@
         alert('選手名簿を保存しました。全画面に反映されます。');
     };
 
-    // 💡 変更箇所: 月間・日別の両方を抽出し、プルダウンをグループ分けして生成する
     window.initPersonalStatsView = () => {
         const select = document.getElementById('stats-period-select');
         select.innerHTML = '<option value="all">累計 (全期間)</option>';
@@ -764,13 +778,10 @@
         const months = new Set();
         const days = new Set();
 
-        // 過去の試合履歴から「年月」と「年月日」を抽出
         Object.values(savedMatches).forEach(m => {
-            // m.date は "2026/5/12 14:30:00" のような形式なので、スペースで区切って日付だけ取得
             const dateStr = m.date.split(' ')[0]; 
             days.add(dateStr);
             
-            // スラッシュで区切って「年月」を作る
             const parts = dateStr.split('/');
             if(parts.length >= 2) {
                 const monthStr = `${parts[0]}/${parts[1]}`;
@@ -778,7 +789,6 @@
             }
         });
         
-        // ① 日別スタッツの選択肢を追加
         if (days.size > 0) {
             const optgroupDay = document.createElement('optgroup');
             optgroupDay.label = "▼ 日別スタッツ";
@@ -788,7 +798,6 @@
             select.appendChild(optgroupDay);
         }
 
-        // ② 月間スタッツの選択肢を追加
         if (months.size > 0) {
             const optgroupMonth = document.createElement('optgroup');
             optgroupMonth.label = "▼ 月間スタッツ";
@@ -801,32 +810,26 @@
         renderPersonalStats();
     };
 
-    // 💡 変更箇所: 選択された「日」または「月」に完全一致するデータだけを集計する
-window.renderPersonalStats = () => {
+    window.renderPersonalStats = () => {
         const targetPeriod = document.getElementById('stats-period-select').value;
         const tbody = document.getElementById('personal-stats-tbody');
         tbody.innerHTML = '';
         
-        // 💡 変更: 現在の players(名簿) に縛られず、アーカイブからすべて抽出するための空箱
         let agg = {};
 
-        // 履歴データをループして合算
         Object.values(savedMatches).forEach(m => {
             if (targetPeriod !== 'all') {
                 const dateStr = m.date.split(' ')[0]; 
                 const parts = dateStr.split('/');
                 const monthStr = parts.length >= 2 ? `${parts[0]}/${parts[1]}` : ""; 
                 
-                // ターゲットが「日」でも「月」でも、一致しない試合はスキップ
                 if (targetPeriod !== dateStr && targetPeriod !== monthStr) {
                     return; 
                 }
             }
             
             m.players.forEach(mp => {
-                // 💡 変更: アーカイブ内に選手が出てくるたびに agg に登録する（完全履歴ベース）
                 if (!agg[mp.id]) {
-                    // ※背番号や名前は、今の名簿にあれば最新のものを優先し、なければ当時の履歴データを使う
                     const currentPlayer = players.find(p => p.id === mp.id);
                     agg[mp.id] = { 
                         no: currentPlayer ? currentPlayer.no : mp.no, 
@@ -838,7 +841,6 @@ window.renderPersonalStats = () => {
                     };
                 }
 
-                // ブロックの入力(◎,○,△,×)が1つでもあれば、出場セットとしてカウント
                 if(mp.block) {
                     const matchBlockTotal = mp.block.ex + mp.block.ok + mp.block.bad + mp.block.miss;
                     if (matchBlockTotal > 0) {
@@ -859,14 +861,12 @@ window.renderPersonalStats = () => {
             });
         });
 
-        // 合算した結果をテーブルに描画
         Object.values(agg).forEach(p => {
             const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
             const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
             const tossTotal = p.toss.ex + p.toss.ok + p.toss.bad + p.toss.miss;
             const blockTotal = p.block.ex + p.block.ok + p.block.bad + p.block.miss;
             
-            // 記録が1つもない選手はスキップ
             if(spkTotal === 0 && recTotal === 0 && tossTotal === 0 && blockTotal === 0 && (p.serve.ex+p.serve.ok+p.serve.bad+p.serve.miss) === 0 && (p.dig.ex+p.dig.ok+p.dig.bad+p.dig.miss) === 0) return; 
 
             const blockPerSet = p.playedSets > 0 ? (p.block.ex / p.playedSets).toFixed(2) : "0.00";
@@ -1064,8 +1064,10 @@ window.renderPersonalStats = () => {
         
         const rateColor = val < 0 ? 'var(--red)' : '#aaa';
         const rateWeight = val < 0 ? 'bold' : 'normal';
+        
+        const rateDisplay = cat === 'block' ? '' : `${val}%`;
 
-        return `<div class="stat-item ${extraClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt" style="color:${rateColor}; font-weight:${rateWeight};">${val}%</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+        return `<div class="stat-item ${extraClass}" id="row-${pid}-${cat}"><div class="stat-header"><span class="stat-label">${label}</span><span class="rate-txt" style="color:${rateColor}; font-weight:${rateWeight};">${rateDisplay}</span></div><div class="btn-grid">${btns.map((b,i)=>`<button class="btn" style="background:${['var(--gold)','var(--green)','var(--orange)','var(--red)'][i]}" onclick="record(${pid},'${cat}','${['ex','ok','bad','miss'][i]}')">${b}</button>`).join('')}</div><div class="num-row">${counts.map(c=>`<span>${c}</span>`).join('')}</div></div>`;
     }
 
     function startTransaction() { isTransaction = true; currentTransaction = []; }
@@ -1123,8 +1125,9 @@ window.renderPersonalStats = () => {
         }
         
         score[side]+=val; 
+        if(score[side] < 0) score[side] = 0;
         
-        rallyPhase = (serveRights === 'us') ? 'serve' : 'reception';
+        rallyPhase = (serveRights === 'us') ? 'serve' : (serveRights === 'them' ? 'reception' : '');
 
         checkLiberoSwap(); 
         courtIds = calculateCourtIds();
@@ -1132,9 +1135,28 @@ window.renderPersonalStats = () => {
         currentTransaction.push({type:'score', side, val, rotated, pRights, prevServeOrder, prevRotationCount, prevRallyPhase: rallyPhase}); 
     }
 
+    // 💡 復元：点数の手動増減ボタン用関数
     window.modifyScore = (side, val) => {
         startTransaction();
         modifyScoreInternal(side, val);
+        commitTransaction();
+    };
+
+    // 💡 復元：強制ローテボタン用関数
+    window.forceRotate = (dir) => {
+        startTransaction();
+        let prevServeOrder = [...serveOrder];
+        let prevRotationCount = rotationCount;
+        
+        if (dir > 0) {
+            serveOrder.push(serveOrder.shift());
+            rotationCount = rotationCount === 6 ? 1 : rotationCount + 1;
+        } else {
+            serveOrder.unshift(serveOrder.pop());
+            rotationCount = rotationCount === 1 ? 6 : rotationCount - 1;
+        }
+        courtIds = calculateCourtIds();
+        currentTransaction.push({type:'forceRotate', prevServeOrder, prevRotationCount, prevRallyPhase: rallyPhase});
         commitTransaction();
     };
     
@@ -1180,6 +1202,12 @@ window.renderPersonalStats = () => {
                 teamErrors[last.errSide]--;
                 if(teamErrors[last.errSide] < 0) teamErrors[last.errSide] = 0;
                 if (last.prevRallyPhase !== undefined) rallyPhase = last.prevRallyPhase;
+            } else if (last.type==='forceRotate') {
+                // 💡 復元：強制ローテのUndo対応
+                serveOrder = [...last.prevServeOrder];
+                rotationCount = last.prevRotationCount;
+                if (last.prevRallyPhase !== undefined) rallyPhase = last.prevRallyPhase;
+                courtIds = calculateCourtIds();
             }
         }
         save(); 
