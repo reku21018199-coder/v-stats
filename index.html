@@ -802,7 +802,7 @@
     };
 
     // 💡 変更箇所: 選択された「日」または「月」に完全一致するデータだけを集計する
-    window.renderPersonalStats = () => {
+ window.renderPersonalStats = () => {
         const targetPeriod = document.getElementById('stats-period-select').value;
         const tbody = document.getElementById('personal-stats-tbody');
         tbody.innerHTML = '';
@@ -813,16 +813,17 @@
             agg[p.id] = { 
                 no: p.no, name: p.name, role: p.role,
                 spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, 
-                dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0}, toss:{ex:0,ok:0,bad:0,miss:0} 
+                dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0}, toss:{ex:0,ok:0,bad:0,miss:0},
+                playedSets: 0 // 💡 追加: 選手ごとの「実質的な」出場セット数
             };
         });
 
         // 履歴データをループして合算
         Object.values(savedMatches).forEach(m => {
             if (targetPeriod !== 'all') {
-                const dateStr = m.date.split(' ')[0]; // 例: "2026/5/12"
+                const dateStr = m.date.split(' ')[0]; 
                 const parts = dateStr.split('/');
-                const monthStr = parts.length >= 2 ? `${parts[0]}/${parts[1]}` : ""; // 例: "2026/5"
+                const monthStr = parts.length >= 2 ? `${parts[0]}/${parts[1]}` : ""; 
                 
                 // ターゲットが「日」でも「月」でも、一致しない試合はスキップ
                 if (targetPeriod !== dateStr && targetPeriod !== monthStr) {
@@ -832,6 +833,14 @@
             
             m.players.forEach(mp => {
                 if(agg[mp.id]) {
+                    // 💡 追加: この試合でブロックの入力(◎,○,△,×)が1つでもあれば、出場セットとしてカウント
+                    if(mp.block) {
+                        const matchBlockTotal = mp.block.ex + mp.block.ok + mp.block.bad + mp.block.miss;
+                        if (matchBlockTotal > 0) {
+                            agg[mp.id].playedSets++;
+                        }
+                    }
+
                     ['spike', 'serve', 'block', 'dig', 'toss'].forEach(cat => {
                         if(mp[cat]) {
                             agg[mp.id][cat].ex += mp[cat].ex; agg[mp.id][cat].ok += mp[cat].ok;
@@ -851,13 +860,22 @@
             const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
             const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
             const tossTotal = p.toss.ex + p.toss.ok + p.toss.bad + p.toss.miss;
-            if(spkTotal === 0 && recTotal === 0 && tossTotal === 0 && (p.serve.ex+p.serve.ok+p.serve.bad+p.serve.miss) === 0 && (p.dig.ex+p.dig.ok+p.dig.bad+p.dig.miss) === 0) return; 
+            const blockTotal = p.block.ex + p.block.ok + p.block.bad + p.block.miss;
+            
+            // 記録が1つもない選手はスキップ
+            if(spkTotal === 0 && recTotal === 0 && tossTotal === 0 && blockTotal === 0 && (p.serve.ex+p.serve.ok+p.serve.bad+p.serve.miss) === 0 && (p.dig.ex+p.dig.ok+p.dig.bad+p.dig.miss) === 0) return; 
+
+            // 💡 変更: チーム全体の試合数ではなく、その選手自身の「出場セット数(playedSets)」で割る
+            const blockPerSet = p.playedSets > 0 ? (p.block.ex / p.playedSets).toFixed(2) : "0.00";
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}<br><span style="font-size:9px;color:#888;">${p.role}</span></td>
                 <td style="border-left:1px solid #555;"><span class="stat-main">${getSpikeRate(p.spike)}%</span><br><span class="stat-cell">(${p.spike.ex}/${spkTotal})</span></td>
-                <td style="border-left:1px solid #555;"><span class="stat-main">${getBlockEff(p.block)}%</span><br><span class="stat-cell">(${p.block.ex}/${p.block.ex+p.block.ok+p.block.bad+p.block.miss})</span></td>
+                
+                <!-- 💡 変更: 分母を playedSets に変更 -->
+                <td style="border-left:1px solid #555;"><span class="stat-main" style="color:var(--gold);">${blockPerSet}</span><br><span class="stat-cell">(${p.block.ex}本/${p.playedSets}set)</span></td>
+                
                 <td style="border-left:1px solid #555;"><span class="stat-main">${getServeEff(p.serve)}%</span><br><span class="stat-cell">(${p.serve.ex}/${p.serve.ex+p.serve.ok+p.serve.bad+p.serve.miss})</span></td>
                 <td style="border-left:1px solid #555;"><span class="stat-main">${getDigRate(p.dig)}%</span><br><span class="stat-cell">(${p.dig.ex+p.dig.ok}/${p.dig.ex+p.dig.ok+p.dig.bad+p.dig.miss})</span></td>
                 <td style="border-left:1px solid #555;"><span class="stat-main">${getRecRate(p.rec)}%</span><br><span class="stat-cell">(${p.rec.a}/${recTotal})</span></td>
