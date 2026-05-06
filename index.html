@@ -756,27 +756,58 @@
         alert('選手名簿を保存しました。全画面に反映されます。');
     };
 
+    // 💡 変更箇所: 月間・日別の両方を抽出し、プルダウンをグループ分けして生成する
     window.initPersonalStatsView = () => {
         const select = document.getElementById('stats-period-select');
         select.innerHTML = '<option value="all">累計 (全期間)</option>';
         
         const months = new Set();
+        const days = new Set();
+
+        // 過去の試合履歴から「年月」と「年月日」を抽出
         Object.values(savedMatches).forEach(m => {
-            const matchMonth = m.date.substring(0, 7); 
-            months.add(matchMonth);
+            // m.date は "2026/5/12 14:30:00" のような形式なので、スペースで区切って日付だけ取得
+            const dateStr = m.date.split(' ')[0]; 
+            days.add(dateStr);
+            
+            // スラッシュで区切って「年月」を作る
+            const parts = dateStr.split('/');
+            if(parts.length >= 2) {
+                const monthStr = `${parts[0]}/${parts[1]}`;
+                months.add(monthStr);
+            }
         });
-        [...months].sort((a,b)=>b.localeCompare(a)).forEach(mo => {
-            select.innerHTML += `<option value="${mo}">${mo} 月間</option>`;
-        });
+        
+        // ① 日別スタッツの選択肢を追加
+        if (days.size > 0) {
+            const optgroupDay = document.createElement('optgroup');
+            optgroupDay.label = "▼ 日別スタッツ";
+            [...days].sort((a,b)=>b.localeCompare(a)).forEach(day => {
+                optgroupDay.innerHTML += `<option value="${day}">${day} の成績</option>`;
+            });
+            select.appendChild(optgroupDay);
+        }
+
+        // ② 月間スタッツの選択肢を追加
+        if (months.size > 0) {
+            const optgroupMonth = document.createElement('optgroup');
+            optgroupMonth.label = "▼ 月間スタッツ";
+            [...months].sort((a,b)=>b.localeCompare(a)).forEach(mo => {
+                optgroupMonth.innerHTML += `<option value="${mo}">${mo} 月間</option>`;
+            });
+            select.appendChild(optgroupMonth);
+        }
         
         renderPersonalStats();
     };
 
+    // 💡 変更箇所: 選択された「日」または「月」に完全一致するデータだけを集計する
     window.renderPersonalStats = () => {
-        const targetMonth = document.getElementById('stats-period-select').value;
+        const targetPeriod = document.getElementById('stats-period-select').value;
         const tbody = document.getElementById('personal-stats-tbody');
         tbody.innerHTML = '';
         
+        // 集計用の空箱をIDごとに用意する
         let agg = {};
         players.forEach(p => {
             agg[p.id] = { 
@@ -786,8 +817,18 @@
             };
         });
 
+        // 履歴データをループして合算
         Object.values(savedMatches).forEach(m => {
-            if (targetMonth !== 'all' && !m.date.startsWith(targetMonth)) return; 
+            if (targetPeriod !== 'all') {
+                const dateStr = m.date.split(' ')[0]; // 例: "2026/5/12"
+                const parts = dateStr.split('/');
+                const monthStr = parts.length >= 2 ? `${parts[0]}/${parts[1]}` : ""; // 例: "2026/5"
+                
+                // ターゲットが「日」でも「月」でも、一致しない試合はスキップ
+                if (targetPeriod !== dateStr && targetPeriod !== monthStr) {
+                    return; 
+                }
+            }
             
             m.players.forEach(mp => {
                 if(agg[mp.id]) {
@@ -805,6 +846,7 @@
             });
         });
 
+        // 合算した結果をテーブルに描画
         Object.values(agg).forEach(p => {
             const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
             const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
