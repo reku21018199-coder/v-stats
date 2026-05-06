@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V-Stats v15</title>
+    <title>V-Stats Enterprise | v2.0.0</title>
     <style>
         :root {
             --court-green: #2d4a22; --card-bg: #252830; --text: #e4e6eb; --header-bg: #1e2127;   
@@ -83,7 +83,6 @@
 
         .player-card { background: var(--card-bg); border-radius: 3px; padding: 2px 4px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative;}
         .player-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1px; margin-bottom: 1px; }
-        .player-header input { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: bold; width: 40%; padding: 0; }
 
         .stat-item { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1px 0; transition: background 0.2s ease; border: 1px solid transparent;}
         
@@ -122,7 +121,6 @@
         body.tablet-mode .action-panel { gap: 5px; }
         body.tablet-mode .player-card { padding: 5px 8px; gap: 5px; border-radius: 5px; }
         body.tablet-mode .player-header { padding-bottom: 3px; margin-bottom: 3px; }
-        body.tablet-mode .player-header input { font-size: 14px; width: 45%; }
         body.tablet-mode .stat-item { gap: 3px; padding: 3px 0; }
         body.tablet-mode .stat-label, body.tablet-mode .rate-txt { font-size: 12px; }
         body.tablet-mode .btn-grid { gap: 3px; }
@@ -135,7 +133,6 @@
         body.compact-tablet-mode .court-section { gap: 4px; padding: 4px; }
         body.compact-tablet-mode .control-section { flex: 0 0 180px; gap: 4px; }
         body.compact-tablet-mode .player-card { padding: 4px 6px; gap: 4px; border-radius: 4px; }
-        body.compact-tablet-mode .player-header input { font-size: 13px; }
         body.compact-tablet-mode .stat-item { gap: 2px; padding: 2px 0; }
         body.compact-tablet-mode .stat-label, body.compact-tablet-mode .rate-txt { font-size: 11px; }
         body.compact-tablet-mode .btn { font-size: 12px; padding: 6px 0; border-radius: 3px; }
@@ -178,9 +175,14 @@
 </div>
 
 <div class="app-body">
+    <!-- サイドメニュー -->
     <div class="side-menu" id="side-menu">
         <div class="menu-item" onclick="switchView('live')" id="menu-live" style="display:none; cursor:pointer;">🏐 入力画面</div>
         <div class="menu-item" onclick="switchView('history')" id="menu-history" style="display:none; cursor:pointer;">📊 試合履歴アーカイブ</div>
+        
+        <!-- 新規追加：選手登録・個人成績ページ -->
+        <div class="menu-item" onclick="switchView('roster')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; cursor:pointer;">👥 選手名簿・登録</div>
+        <div class="menu-item" onclick="switchView('personal-stats')" style="cursor:pointer; color: var(--green);">📈 個人成績 (月間/累計)</div>
         
         <div class="menu-item" onclick="toggleSubMenu('tablet-menu')" style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 10px; display:flex; justify-content:space-between;">📱 タブレット入力 <span style="font-size: 10px;">▼</span></div>
         <div id="tablet-menu" class="sub-menu">
@@ -210,6 +212,7 @@
 
     <div id="cmd-monitor">⌨️ <span id="cmd-text">待機中</span></div>
 
+    <!-- モーダル：試合開始 -->
     <div class="modal-overlay" id="start-overlay">
         <div class="modal-content">
             <h2 style="color:var(--neon-blue); margin-top:0;">試合開始</h2>
@@ -219,6 +222,7 @@
         </div>
     </div>
 
+    <!-- モーダル：ポジション設定 -->
     <div class="modal-overlay" id="pos-setting-modal">
         <div class="modal-content" style="max-height: 85vh; overflow-y: auto; padding: 15px; width: 98%;">
             <h2 style="color:var(--gold); margin-top:0; font-size:18px;">ポジション＆表示設定</h2>
@@ -247,9 +251,9 @@
                 <thead>
                     <tr>
                         <th style="width: 25%;">選手</th>
-                        <th style="width: 22%;">前衛</th>
-                        <th style="width: 22%;">後衛</th>
-                        <th style="width: 31%;">表示項目</th>
+                        <th style="width: 20%;">役割</th>
+                        <th style="width: 20%;">前衛</th>
+                        <th style="width: 35%;">表示項目</th>
                     </tr>
                 </thead>
                 <tbody id="pos-table-body"></tbody>
@@ -258,6 +262,7 @@
         </div>
     </div>
 
+    <!-- チーム管理画面 -->
     <div id="view-teams" class="view-section active">
         <h2 style="margin: 0; font-size: 16px; color: var(--neon-blue);">チーム管理 / ログイン</h2>
         <p style="font-size:11px; color:#aaa; margin:0 0 10px 0;">チームを作成するか、一覧からログインしてください。</p>
@@ -271,6 +276,41 @@
         <div id="team-list-container"></div>
     </div>
 
+    <!-- 👥 選手名簿・登録画面 -->
+    <div id="view-roster" class="view-section" style="flex-direction: column; overflow-y: auto; padding: 15px;">
+        <h2 style="color:var(--neon-blue); margin-top:0;">選手名簿・登録</h2>
+        <p style="font-size:12px; color:#aaa;">※ここで設定した名前と背番号が全画面に反映されます。</p>
+        <div id="roster-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button class="primary-btn" style="margin-top:15px; background:var(--green);" onclick="saveRoster()">名簿を保存</button>
+    </div>
+
+    <!-- 📈 個人成績画面 -->
+    <div id="view-personal-stats" class="view-section" style="flex-direction: column; overflow-y: auto; padding: 15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="color:var(--green); margin-top:0;">個人成績分析</h2>
+            <select id="stats-period-select" class="form-input" style="padding:5px; width:auto;" onchange="renderPersonalStats()">
+                <option value="all">累計 (全期間)</option>
+            </select>
+        </div>
+        <div class="status-table-container" style="margin-top:10px;">
+            <table id="personal-stats-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>名前</th>
+                        <th style="border-left:1px solid #555;">スパイク</th>
+                        <th style="border-left:1px solid #555;">ブロック</th>
+                        <th style="border-left:1px solid #555;">サーブ</th>
+                        <th style="border-left:1px solid #555;">ディグ</th>
+                        <th style="border-left:1px solid #555;">レセプ</th>
+                        <th style="border-left:1px solid #555;">トス</th>
+                    </tr>
+                </thead>
+                <tbody id="personal-stats-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ライブ入力（メインコート）画面 -->
     <div id="view-live" class="view-section main-container">
         <div class="court-section" id="court"></div>
         <div class="control-section">
@@ -279,17 +319,7 @@
                 <div id="turn-indicator-box"></div>
 
                 <div class="score-box">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; flex-direction:column; gap:2px; width:35px;">
-                            <button class="btn" style="background:#444; padding:2px;" onclick="forceScore('us', 1)">+1</button>
-                            <button class="btn" style="background:#444; padding:2px;" onclick="forceScore('us', -1)">-1</button>
-                        </div>
-                        <div class="score-display" style="margin-bottom:0;"><span id="score-us">0</span>-<span id="score-them">0</span></div>
-                        <div style="display:flex; flex-direction:column; gap:2px; width:35px;">
-                            <button class="btn" style="background:#444; padding:2px;" onclick="forceScore('them', 1)">+1</button>
-                            <button class="btn" style="background:#444; padding:2px;" onclick="forceScore('them', -1)">-1</button>
-                        </div>
-                    </div>
+                    <div class="score-display"><span id="score-us">0</span>-<span id="score-them">0</span></div>
                 </div>
                 
                 <div style="display:flex; gap:2px; margin-top:2px;">
@@ -297,15 +327,13 @@
                     <button class="small-btn" style="background:var(--green);" onclick="addTeamError('them')">相手のミス</button>
                 </div>
                 
-                <div style="display:flex; gap:2px; margin-top:2px;">
-                    <button class="small-btn" style="background:#444; border: 1px solid #666;" onclick="forceRotate()">🔄 強制ローテーション</button>
-                </div>
-                
                 <div id="rot-container"></div>
                 
                 <div id="live-analysis" style="margin-top:auto;"></div>
                 <div id="action-buttons">
                     <button class="small-btn" onclick="undo()">戻る</button>
+                    <!-- 新規追加：リセットボタン -->
+                    <button class="small-btn" style="background:var(--red);" onclick="resetBoard()">リセット</button>
                     <button class="small-btn" style="background:var(--gold); color:#000;" onclick="finishGame()">集計保存</button>
                 </div>
                 <button class="small-btn" style="background:var(--blue); flex:none; margin-top:2px;" onclick="toggleBench()">控え・交代 ▼</button>
@@ -315,6 +343,7 @@
         </div>
     </div>
 
+    <!-- アーカイブ・詳細画面 -->
     <div id="view-history" class="view-section">
         <h2 style="margin: 0; font-size: 16px; color: var(--neon-blue);">過去の試合一覧</h2>
         <div id="history-list-container" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
@@ -336,11 +365,12 @@
                 <thead>
                     <tr>
                         <th>#</th><th>名前</th>
-                        <th style="border-left:2px solid #555;">スパイク<br><span style="font-size:8px; color:#aaa;">得点率</span></th>
-                        <th style="border-left:2px solid #555;">サーブ<br><span style="font-size:8px; color:#aaa;">効果率</span></th>
-                        <th style="border-left:2px solid #555;">ブロック<br><span style="font-size:8px; color:#aaa;">効果率</span></th>
-                        <th style="border-left:2px solid #555;">ディグ<br><span style="font-size:8px; color:#aaa;">成功率</span></th>
-                        <th style="border-left:2px solid #555;">レセプション<br><span style="font-size:8px; color:#aaa;">返球率</span></th>
+                        <th style="border-left:2px solid #555;">スパイク</th>
+                        <th style="border-left:2px solid #555;">サーブ</th>
+                        <th style="border-left:2px solid #555;">ブロック</th>
+                        <th style="border-left:2px solid #555;">ディグ</th>
+                        <th style="border-left:2px solid #555;">レセプ</th>
+                        <th style="border-left:2px solid #555;">トス</th>
                     </tr>
                 </thead>
                 <tbody id="detail-stats-tbody"></tbody>
@@ -404,6 +434,7 @@
     const getBlockEff  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex - s.miss)/t*100).toFixed(0):0; };
     const getDigRate   = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex + s.ok)/t*100).toFixed(0):0; };
     const getRecRate   = (r) => { const t = r.a+r.b+r.c+r.miss; return t>0?((r.a*100+r.b*50)/t).toFixed(0):0; };
+    const getTossRate  = (s) => { const t = s.ex+s.ok+s.bad+s.miss; return t>0?((s.ex+s.ok)/t*100).toFixed(0):0; };
 
     function getRateText(cat, s) {
         if(cat === 'spike') return getSpikeRate(s) + '%';
@@ -411,6 +442,7 @@
         if(cat === 'block') return getBlockEff(s) + '%';
         if(cat === 'dig')   return getDigRate(s) + '%';
         if(cat === 'rec')   return getRecRate(s) + '%';
+        if(cat === 'toss')  return getTossRate(s) + '%';
         return '0%';
     }
 
@@ -433,6 +465,8 @@
         document.getElementById('side-menu').classList.remove('open');
         if(viewId === 'teams') renderTeamsView();
         if(viewId === 'history') renderHistoryView(); 
+        if(viewId === 'roster') renderRoster();
+        if(viewId === 'personal-stats') initPersonalStatsView();
     };
 
     window.loginTeam = (teamId) => {
@@ -452,9 +486,9 @@
         const teamId = 'team_' + Date.now(); set(ref(db, `teams_registry/${teamId}`), { name, pass });
         
         let initPlayers = Array.from({length: 15}, (_, i) => ({ 
-            id: i, no: i+1, name: `選手${i+1}`, frontPos:'', backPos:'', 
-            spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0},
-            displayStats: {spike:true, block:true, serve:true, dig:true, rec:true}
+            id: i, no: i+1, name: `選手${i+1}`, role: '', frontPos:'', backPos:'', 
+            spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0}, toss:{ex:0,ok:0,bad:0,miss:0},
+            displayStats: {spike:true, block:true, serve:true, dig:true, rec:true, toss:false}
         }));
         if (name === "福岡工業大学") {
             initPlayers[0] = { ...initPlayers[0], no: 23, name: "黒木廉" }; initPlayers[1] = { ...initPlayers[1], no: 4, name: "藤野悠歩" };
@@ -504,7 +538,11 @@
             
             rallyPhase = data.rallyPhase || (serveRights === 'us' ? 'serve' : (serveRights === 'them' ? 'reception' : ''));
             
-            players.forEach(p => { if (!p.displayStats) p.displayStats = {spike:true, block:true, serve:true, dig:true, rec:true}; });
+            players.forEach(p => { 
+                if (!p.displayStats) p.displayStats = {spike:true, block:true, serve:true, dig:true, rec:true, toss:false}; 
+                if (p.role === undefined) p.role = '';
+                if (!p.toss) p.toss = {ex:0,ok:0,bad:0,miss:0};
+            });
 
             let ls = data.liberoSettings;
             if (!ls) { liberoSettings = [{enabled:false, targetId:'', liberoId:''}, {enabled:false, targetId:'', liberoId:''}]; }
@@ -516,12 +554,15 @@
                 render(); 
                 updateCmdUI(); 
             } 
+            if(document.getElementById('view-roster').classList.contains('active')) renderRoster();
+            
             if(!isSpecialRole) updateAnalysis();
         });
 
         onValue(historyRef, (snapshot) => { 
             savedMatches = snapshot.val() || {}; 
             if(document.getElementById('view-history').classList.contains('active')) renderHistoryView(); 
+            if(document.getElementById('view-personal-stats').classList.contains('active')) initPersonalStatsView(); 
         });
     }
 
@@ -540,6 +581,24 @@
         checkLiberoSwap();
         courtIds = calculateCourtIds();
         save(); 
+    };
+
+    window.autoToggleStats = (pid, role) => {
+        const checks = { 
+            spike: document.getElementById(`disp-spike-${pid}`), 
+            block: document.getElementById(`disp-block-${pid}`), 
+            serve: document.getElementById(`disp-serve-${pid}`), 
+            dig: document.getElementById(`disp-dig-${pid}`), 
+            rec: document.getElementById(`disp-rec-${pid}`), 
+            toss: document.getElementById(`disp-toss-${pid}`) 
+        };
+        
+        Object.values(checks).forEach(c => c.checked = true);
+        
+        if (role === 'S') { checks.spike.checked = false; checks.rec.checked = false; }
+        if (role === 'MB') { checks.rec.checked = false; checks.toss.checked = false; }
+        if (role === 'L') { checks.spike.checked = false; checks.block.checked = false; checks.serve.checked = false; }
+        if (role === 'OH' || role === 'OP') { checks.toss.checked = false; }
     };
 
     window.openPosSettings = () => {
@@ -564,19 +623,21 @@
             tr.innerHTML = `
                 <td style="font-weight:bold; font-size:10px;">#${p.no} ${p.name}</td>
                 <td>
-                    <select class="pos-select" id="frontPos-${p.id}">
-                        <option value="" ${p.frontPos===''?'selected':''}>未</option>
-                        <option value="L" ${p.frontPos==='L'?'selected':''}>レフト</option>
-                        <option value="C" ${p.frontPos==='C'?'selected':''}>センター</option>
-                        <option value="R" ${p.frontPos==='R'?'selected':''}>ライト</option>
+                    <select class="pos-select" id="role-${p.id}" onchange="autoToggleStats(${p.id}, this.value)">
+                        <option value="" ${p.role===''?'selected':''}>-</option>
+                        <option value="OH" ${p.role==='OH'?'selected':''}>OH</option>
+                        <option value="MB" ${p.role==='MB'?'selected':''}>MB</option>
+                        <option value="OP" ${p.role==='OP'?'selected':''}>OP</option>
+                        <option value="S" ${p.role==='S'?'selected':''}>S</option>
+                        <option value="L" ${p.role==='L'?'selected':''}>L</option>
                     </select>
                 </td>
                 <td>
-                    <select class="pos-select" id="backPos-${p.id}">
-                        <option value="" ${p.backPos===''?'selected':''}>未</option>
-                        <option value="L" ${p.backPos==='L'?'selected':''}>レフト</option>
-                        <option value="C" ${p.backPos==='C'?'selected':''}>センター</option>
-                        <option value="R" ${p.backPos==='R'?'selected':''}>ライト</option>
+                    <select class="pos-select" id="frontPos-${p.id}">
+                        <option value="" ${p.frontPos===''?'selected':''}>未</option>
+                        <option value="L" ${p.frontPos==='L'?'selected':''}>L(左)</option>
+                        <option value="C" ${p.frontPos==='C'?'selected':''}>C(中)</option>
+                        <option value="R" ${p.frontPos==='R'?'selected':''}>R(右)</option>
                     </select>
                 </td>
                 <td>
@@ -586,6 +647,7 @@
                         <label class="chk-item"><input type="checkbox" id="disp-serve-${p.id}" ${d.serve?'checked':''}>サ</label>
                         <label class="chk-item"><input type="checkbox" id="disp-dig-${p.id}" ${d.dig?'checked':''}>デ</label>
                         <label class="chk-item"><input type="checkbox" id="disp-rec-${p.id}" ${d.rec?'checked':''}>レ</label>
+                        <label class="chk-item"><input type="checkbox" id="disp-toss-${p.id}" ${d.toss?'checked':''}>ト</label>
                     </div>
                 </td>
             `;
@@ -598,13 +660,14 @@
 
     window.closePosSettings = () => {
         players.forEach(p => {
+            p.role = document.getElementById(`role-${p.id}`).value;
             p.frontPos = document.getElementById(`frontPos-${p.id}`).value;
-            p.backPos = document.getElementById(`backPos-${p.id}`).value;
             p.displayStats.spike = document.getElementById(`disp-spike-${p.id}`).checked;
             p.displayStats.block = document.getElementById(`disp-block-${p.id}`).checked;
             p.displayStats.serve = document.getElementById(`disp-serve-${p.id}`).checked;
             p.displayStats.dig = document.getElementById(`disp-dig-${p.id}`).checked;
             p.displayStats.rec = document.getElementById(`disp-rec-${p.id}`).checked;
+            p.displayStats.toss = document.getElementById(`disp-toss-${p.id}`).checked;
         });
         
         for(let i=0; i<2; i++) {
@@ -671,6 +734,97 @@
         return displayIds;
     }
 
+    window.renderRoster = () => {
+        const list = document.getElementById('roster-list'); list.innerHTML = '';
+        players.forEach(p => {
+            list.innerHTML += `
+                <div style="display:flex; gap:10px; background:rgba(0,0,0,0.3); padding:10px; border-radius:4px; align-items:center;">
+                    <span style="color:#aaa; font-size:12px; width:30px;">ID:${p.id}</span>
+                    <input type="number" id="roster-no-${p.id}" value="${p.no}" class="form-input" style="width:60px; padding:5px;" placeholder="背番号">
+                    <input type="text" id="roster-name-${p.id}" value="${p.name}" class="form-input" style="flex:1; padding:5px;" placeholder="選手名">
+                </div>
+            `;
+        });
+    };
+
+    window.saveRoster = () => {
+        players.forEach(p => {
+            p.no = document.getElementById(`roster-no-${p.id}`).value;
+            p.name = document.getElementById(`roster-name-${p.id}`).value;
+        });
+        save(); 
+        alert('選手名簿を保存しました。全画面に反映されます。');
+    };
+
+    window.initPersonalStatsView = () => {
+        const select = document.getElementById('stats-period-select');
+        select.innerHTML = '<option value="all">累計 (全期間)</option>';
+        
+        const months = new Set();
+        Object.values(savedMatches).forEach(m => {
+            const matchMonth = m.date.substring(0, 7); 
+            months.add(matchMonth);
+        });
+        [...months].sort((a,b)=>b.localeCompare(a)).forEach(mo => {
+            select.innerHTML += `<option value="${mo}">${mo} 月間</option>`;
+        });
+        
+        renderPersonalStats();
+    };
+
+    window.renderPersonalStats = () => {
+        const targetMonth = document.getElementById('stats-period-select').value;
+        const tbody = document.getElementById('personal-stats-tbody');
+        tbody.innerHTML = '';
+        
+        let agg = {};
+        players.forEach(p => {
+            agg[p.id] = { 
+                no: p.no, name: p.name, role: p.role,
+                spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, 
+                dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0}, toss:{ex:0,ok:0,bad:0,miss:0} 
+            };
+        });
+
+        Object.values(savedMatches).forEach(m => {
+            if (targetMonth !== 'all' && !m.date.startsWith(targetMonth)) return; 
+            
+            m.players.forEach(mp => {
+                if(agg[mp.id]) {
+                    ['spike', 'serve', 'block', 'dig', 'toss'].forEach(cat => {
+                        if(mp[cat]) {
+                            agg[mp.id][cat].ex += mp[cat].ex; agg[mp.id][cat].ok += mp[cat].ok;
+                            agg[mp.id][cat].bad += mp[cat].bad; agg[mp.id][cat].miss += mp[cat].miss;
+                        }
+                    });
+                    if(mp.rec) {
+                        agg[mp.id].rec.a += mp.rec.a; agg[mp.id].rec.b += mp.rec.b;
+                        agg[mp.id].rec.c += mp.rec.c; agg[mp.id].rec.miss += mp.rec.miss;
+                    }
+                }
+            });
+        });
+
+        Object.values(agg).forEach(p => {
+            const spkTotal = p.spike.ex + p.spike.ok + p.spike.bad + p.spike.miss;
+            const recTotal = p.rec.a + p.rec.b + p.rec.c + p.rec.miss;
+            const tossTotal = p.toss.ex + p.toss.ok + p.toss.bad + p.toss.miss;
+            if(spkTotal === 0 && recTotal === 0 && tossTotal === 0 && (p.serve.ex+p.serve.ok+p.serve.bad+p.serve.miss) === 0 && (p.dig.ex+p.dig.ok+p.dig.bad+p.dig.miss) === 0) return; 
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}<br><span style="font-size:9px;color:#888;">${p.role}</span></td>
+                <td style="border-left:1px solid #555;"><span class="stat-main">${getSpikeRate(p.spike)}%</span><br><span class="stat-cell">(${p.spike.ex}/${spkTotal})</span></td>
+                <td style="border-left:1px solid #555;"><span class="stat-main">${getBlockEff(p.block)}%</span><br><span class="stat-cell">(${p.block.ex}/${p.block.ex+p.block.ok+p.block.bad+p.block.miss})</span></td>
+                <td style="border-left:1px solid #555;"><span class="stat-main">${getServeEff(p.serve)}%</span><br><span class="stat-cell">(${p.serve.ex}/${p.serve.ex+p.serve.ok+p.serve.bad+p.serve.miss})</span></td>
+                <td style="border-left:1px solid #555;"><span class="stat-main">${getDigRate(p.dig)}%</span><br><span class="stat-cell">(${p.dig.ex+p.dig.ok}/${p.dig.ex+p.dig.ok+p.dig.bad+p.dig.miss})</span></td>
+                <td style="border-left:1px solid #555;"><span class="stat-main">${getRecRate(p.rec)}%</span><br><span class="stat-cell">(${p.rec.a}/${recTotal})</span></td>
+                <td style="border-left:1px solid #555;"><span class="stat-main">${getTossRate(p.toss)}%</span><br><span class="stat-cell">(${p.toss.ex+p.toss.ok}/${tossTotal})</span></td>
+            `;
+            document.getElementById('personal-stats-tbody').appendChild(tr);
+        });
+    };
+
     function renderHistoryView() {
         const container = document.getElementById('history-list-container'); container.innerHTML = '';
         const matchIds = Object.keys(savedMatches).sort((a, b) => b - a);
@@ -698,6 +852,7 @@
             const serveTotal = p.serve.ex + p.serve.ok + p.serve.bad + p.serve.miss;
             const blockTotal = p.block.ex + p.block.ok + p.block.bad + p.block.miss;
             const digTotal = p.dig.ex + p.dig.ok + p.dig.bad + p.dig.miss;
+            const tossTotal = p.toss ? (p.toss.ex + p.toss.ok + p.toss.bad + p.toss.miss) : 0;
 
             teamSpikeMiss += p.spike.miss;
             teamServeMiss += p.serve.miss;
@@ -708,8 +863,9 @@
             const blockEff = getBlockEff(p.block);
             const digRate = getDigRate(p.dig);
             const recRate = getRecRate(p.rec);
+            const tossRate = p.toss ? getTossRate(p.toss) : 0;
             
-            if(spkTotal === 0 && recTotal === 0 && blockTotal === 0 && serveTotal === 0 && digTotal === 0) return;
+            if(spkTotal === 0 && recTotal === 0 && blockTotal === 0 && serveTotal === 0 && digTotal === 0 && tossTotal === 0) return;
 
             const spkClass = spkRate >= 40 ? 'stat-good' : (spkRate < 0 ? 'stat-bad' : '');
             const srvClass = serveEff >= 10 ? 'stat-good' : (serveEff < 0 ? 'stat-bad' : '');
@@ -720,11 +876,12 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>#${p.no}</td><td style="color:var(--neon-blue); font-weight:bold;">${p.name}</td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${spkClass}">${spkRate}%</span><br><span class="stat-cell">(${p.spike.ex}/${p.spike.ok}/${p.spike.bad}/${p.spike.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${srvClass}">${serveEff}%</span><br><span class="stat-cell">(${p.serve.ex}/${p.serve.ok}/${p.serve.bad}/${p.serve.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${blkClass}">${blockEff}%</span><br><span class="stat-cell">(${p.block.ex}/${p.block.ok}/${p.block.bad}/${p.block.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${digClass}">${digRate}%</span><br><span class="stat-cell">(${p.dig.ex}/${p.dig.ok}/${p.dig.bad}/${p.dig.miss})</span></td>
-                <td style="border-left:2px solid #555;"><span class="stat-main ${recClass}">${recRate}%</span><br><span class="stat-cell">(${p.rec.a}/${p.rec.b}/${p.rec.c}/${p.rec.miss})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${spkClass}">${spkRate}%</span><br><span class="stat-cell">(${p.spike.ex}/${spkTotal})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${srvClass}">${serveEff}%</span><br><span class="stat-cell">(${p.serve.ex}/${serveTotal})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${blkClass}">${blockEff}%</span><br><span class="stat-cell">(${p.block.ex}/${blockTotal})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${digClass}">${digRate}%</span><br><span class="stat-cell">(${p.dig.ex}/${digTotal})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main ${recClass}">${recRate}%</span><br><span class="stat-cell">(${p.rec.a}/${recTotal})</span></td>
+                <td style="border-left:2px solid #555;"><span class="stat-main">${tossRate}%</span><br><span class="stat-cell">(${p.toss?.ex||0}/${tossTotal})</span></td>
             `;
             tbody.appendChild(tr);
         });
@@ -763,15 +920,10 @@
         
         const turnBox = document.getElementById('turn-indicator-box');
         if (turnBox) {
-            if (rallyPhase === 'serve') {
-                turnBox.innerHTML = `<div class="turn-indicator turn-serve">🏐 自チーム サーブターン</div>`;
-            } else if (rallyPhase === 'reception') {
-                turnBox.innerHTML = `<div class="turn-indicator turn-receive">🤲 相手サーブ (レセプション)</div>`;
-            } else if (rallyPhase === 'rally') {
-                turnBox.innerHTML = `<div class="turn-indicator turn-rally">🔥 ラリー継続中 (ディグ準備)</div>`;
-            } else {
-                turnBox.innerHTML = `<div class="turn-indicator" style="background:#555; color:#fff;">- 試合開始前 -</div>`;
-            }
+            if (rallyPhase === 'serve') { turnBox.innerHTML = `<div class="turn-indicator turn-serve">🏐 自チーム サーブターン</div>`; } 
+            else if (rallyPhase === 'reception') { turnBox.innerHTML = `<div class="turn-indicator turn-receive">🤲 相手サーブ (レセプション)</div>`; } 
+            else if (rallyPhase === 'rally') { turnBox.innerHTML = `<div class="turn-indicator turn-rally">🔥 ラリー継続中 (ディグ準備)</div>`; } 
+            else { turnBox.innerHTML = `<div class="turn-indicator" style="background:#555; color:#fff;">- 試合開始前 -</div>`; }
         }
 
         [3, 2, 1, 4, 5, 0].forEach(idx => {
@@ -784,6 +936,7 @@
             if (showAttack) { 
                 if (d.spike) rowsHTML += createRow(p.id, 'スパイク', 'spike', ['◎','○','△','×']); 
                 if (d.block) rowsHTML += createRow(p.id, 'ブロック', 'block', ['◎','○','△','×']); 
+                if (d.toss)  rowsHTML += createRow(p.id, 'トス', 'toss', ['◎','○','△','×']); 
             }
             if (showDefense) { 
                 if (d.rec)   rowsHTML += createRow(p.id, 'レセプション', 'rec', ['A','B','C','×']); 
@@ -791,8 +944,14 @@
                 if (d.serve) rowsHTML += createRow(p.id, 'サーブ', 'serve', ['◎','○','△','×']); 
             }
             
-            card.innerHTML = `<div class="player-header"><input type="text" value="${p.no}" id="no-${p.id}"><input type="text" value="${p.name}" id="name-${p.id}"><span style="margin-left:auto; cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span></div>${rowsHTML}`; court.appendChild(card);
-            document.getElementById(`no-${p.id}`).addEventListener('change', (e) => { players[p.id].no = e.target.value; save(); }); document.getElementById(`name-${p.id}`).addEventListener('change', (e) => { players[p.id].name = e.target.value; save(); });
+            card.innerHTML = `<div class="player-header">
+                <span style="font-size: 13px; font-weight: bold;">
+                    <span style="color:var(--gold)">#${p.no}</span> ${p.name} 
+                    <span style="font-size:9px; color:#888; margin-left:4px;">${p.role || ''}</span>
+                </span>
+                <span style="margin-left:auto; cursor:pointer;font-size:14px;color:var(--neon-blue);" onclick="handleSwap(${p.id})">🔄</span>
+            </div>${rowsHTML}`; 
+            court.appendChild(card);
         });
         
         const rotContainer = document.getElementById('rot-container');
@@ -830,13 +989,9 @@
         let extraClass = '';
         
         if (serveRights !== "") {
-            if (rallyPhase === 'serve' && cat === 'serve' && pid === serveOrder[0]) {
-                extraClass += 'serve-turn-highlight ';
-            } else if (rallyPhase === 'reception' && cat === 'rec') {
-                extraClass += 'rec-turn-highlight ';
-            } else if (rallyPhase === 'rally' && cat === 'dig') {
-                extraClass += 'dig-turn-highlight ';
-            }
+            if (rallyPhase === 'serve' && cat === 'serve' && pid === serveOrder[0]) { extraClass += 'serve-turn-highlight '; } 
+            else if (rallyPhase === 'reception' && cat === 'rec') { extraClass += 'rec-turn-highlight '; } 
+            else if (rallyPhase === 'rally' && cat === 'dig') { extraClass += 'dig-turn-highlight '; }
         }
         
         let val = 0;
@@ -845,6 +1000,7 @@
         else if(cat === 'block') val = getBlockEff(s);
         else if(cat === 'dig')   val = getDigRate(s);
         else if(cat === 'rec')   val = getRecRate(s);
+        else if(cat === 'toss')  val = getTossRate(s);
         
         const rateColor = val < 0 ? 'var(--red)' : '#aaa';
         const rateWeight = val < 0 ? 'bold' : 'normal';
@@ -921,36 +1077,6 @@
         modifyScoreInternal(side, val);
         commitTransaction();
     };
-
-    window.forceScore = (side, val) => {
-        startTransaction();
-        const prevScore = score[side];
-        score[side] += val;
-        if(score[side] < 0) score[side] = 0;
-        const diff = score[side] - prevScore;
-        
-        if (diff !== 0) {
-            currentTransaction.push({type: 'forceScore', side: side, val: diff});
-            commitTransaction();
-        } else {
-            isTransaction = false;
-        }
-    };
-
-    window.forceRotate = () => {
-        startTransaction();
-        const prevServeOrder = [...serveOrder];
-        const prevRotationCount = rotationCount;
-        
-        serveOrder.push(serveOrder.shift());
-        rotationCount = rotationCount === 6 ? 1 : rotationCount + 1;
-        
-        checkLiberoSwap();
-        courtIds = calculateCourtIds();
-        
-        currentTransaction.push({type: 'forceRotate', prevServeOrder, prevRotationCount});
-        commitTransaction();
-    };
     
     window.handleSwap = (id) => { 
         if(swapSourceId === null) { swapSourceId = id; render(); } 
@@ -994,17 +1120,29 @@
                 teamErrors[last.errSide]--;
                 if(teamErrors[last.errSide] < 0) teamErrors[last.errSide] = 0;
                 if (last.prevRallyPhase !== undefined) rallyPhase = last.prevRallyPhase;
-            } else if (last.type === 'forceScore') {
-                score[last.side] -= last.val;
-            } else if (last.type === 'forceRotate') {
-                serveOrder = [...last.prevServeOrder];
-                rotationCount = last.prevRotationCount;
-                courtIds = calculateCourtIds();
             }
         }
         save(); 
     };
     
+    window.resetBoard = () => {
+        if(confirm("【警告】現在のボードの点数やスタッツをゼロに戻します。\n（※履歴には保存されません）\nよろしいですか？")) {
+            players.forEach(p => {
+                ['spike', 'serve', 'rec', 'dig', 'block', 'toss'].forEach(cat => {
+                    if(cat === 'rec') { p[cat] = {a:0, b:0, c:0, miss:0}; }
+                    else { p[cat] = {ex:0, ok:0, bad:0, miss:0}; }
+                });
+            });
+            score = {us:0, them:0};
+            teamErrors = {us:0, them:0};
+            serveRights = "";
+            rallyPhase = "";
+            rotationCount = 1;
+            save();
+            alert('ボードをリセットしました。');
+        }
+    };
+
     window.finishGame = () => { 
         if(confirm("この試合のデータを履歴に保存し、ボードを初期化しますか？")) { 
             const opponentName = prompt("対戦相手のチーム名を入力してください", "練習試合") || "不明";
@@ -1012,8 +1150,8 @@
             const matchData = { date: new Date().toLocaleString('ja-JP'), opponent: opponentName, score: score, players: players, teamErrors: teamErrors, rotStats: rotStats };
             set(ref(db, `teams/${currentTeamId}/matches_history/${matchId}`), matchData).then(() => { 
                 const initPlayers = Array.from({length: 15}, (_, i) => ({ 
-                    id: i, no: players[i].no, name: players[i].name, frontPos: players[i].frontPos, backPos: players[i].backPos, 
-                    spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0},
+                    id: i, no: players[i].no, name: players[i].name, role: players[i].role, frontPos: players[i].frontPos, backPos: players[i].backPos, 
+                    spike:{ex:0,ok:0,bad:0,miss:0}, serve:{ex:0,ok:0,bad:0,miss:0}, rec:{a:0,b:0,c:0,miss:0}, dig:{ex:0,ok:0,bad:0,miss:0}, block:{ex:0,ok:0,bad:0,miss:0}, toss:{ex:0,ok:0,bad:0,miss:0},
                     displayStats: players[i].displayStats 
                 }));
 
@@ -1038,7 +1176,7 @@
                 cmdState.category = null;
                 const p = players.find(p => p.id === cmdState.playerId);
                 if (p) {
-                    cmdText.innerHTML = `<span class="cmd-highlight">#${p.no} ${p.name}</span> : 項目(a/b/r/d/s)を選択`;
+                    cmdText.innerHTML = `<span class="cmd-highlight">#${p.no} ${p.name}</span> : 項目(a/b/r/d/s/t)を選択`;
                     updateCmdUI();
                 } else {
                     resetCmd();
@@ -1061,7 +1199,7 @@
                 const targetPlayer = players.find(p => p.no.toString() === parseInt(cmdState.numStr).toString());
                 if (targetPlayer) {
                     cmdState.playerId = targetPlayer.id;
-                    cmdText.innerHTML = `<span class="cmd-highlight">#${targetPlayer.no} ${targetPlayer.name}</span> : 項目(a/b/r/d/s)を選択`;
+                    cmdText.innerHTML = `<span class="cmd-highlight">#${targetPlayer.no} ${targetPlayer.name}</span> : 項目(a/b/r/d/s/t)を選択`;
                     updateCmdUI();
                 } else {
                     cmdText.innerHTML = `該当なし`;
@@ -1072,8 +1210,8 @@
         }
 
         if (cmdState.playerId !== null && !cmdState.category) {
-            const catMap = { 'a':'spike', 'b':'block', 'r':'rec', 'd':'dig', 's':'serve' };
-            const catNameMap = { 'a':'スパイク', 'b':'ブロック', 'r':'レセプション', 'd':'ディグ', 's':'サーブ' };
+            const catMap = { 'a':'spike', 'b':'block', 'r':'rec', 'd':'dig', 's':'serve', 't':'toss' };
+            const catNameMap = { 'a':'スパイク', 'b':'ブロック', 'r':'レセプション', 'd':'ディグ', 's':'サーブ', 't':'トス' };
             
             if (catMap[key]) {
                 const rowExists = document.getElementById(`row-${cmdState.playerId}-${catMap[key]}`);
